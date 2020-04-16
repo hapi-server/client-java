@@ -2,11 +2,11 @@ from org.hapiserver.HapiClient import *
 
 hapiServer= URL( "https://jfaden.net/HapiServerDemo/hapi/" )
 
-id= 'Iowa+City+Conditions'
+ID= 'Iowa+City+Conditions'
 
-print '--- ' + id + ' ---'
-params= getInfoParametersArray(hapiServer, 'Iowa+City+Conditions' )
-for p in params:
+print '--- ' + ID + ' ---'
+parameters= getInfoParametersArray(hapiServer, ID )
+for p in parameters:
     print p
 
 it= getData( hapiServer, 'Iowa+City+Conditions', 'Temperature,Humidity', '2019-10-21T00:00', '2019-10-22T00:00' )
