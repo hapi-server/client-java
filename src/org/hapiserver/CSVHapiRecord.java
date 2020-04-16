@@ -14,9 +14,8 @@ public class CSVHapiRecord implements HapiRecord {
     Map<Integer,Integer> indexMap;
 
     public CSVHapiRecord( JSONObject info, String[] fields ) {
-        this.fields= fields;
-        
-    } //TODO: if any parameter has length>0, then recombine them.
+        this.fields= fields;   
+    }
     
     @Override
     public String getIsoTime(int i) {
