@@ -17,8 +17,10 @@ import java.net.URLConnection;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -495,7 +497,151 @@ public class HapiClient {
         
     }
     
+    /**
+     * return the next day boundary.
+     * @param day
+     * @return 
+     */
+    public static String nextDay( String day ) {
+        int[] nn= isoTimeToArray( day );
+        nn[2]= nn[2]+1;
+        normalizeTime(nn);
+        return String.format( "%04d-%02d-%02dZ", 
+                nn[0], nn[1], nn[2] );
+                
+    }
+    
+    /**
+     * 
+     * @param startTime must be $Y-$m-$dT...
+     * @param stopTime must be $Y-$m-$dT...
+     * @return array of times.
+     */
+    public static String[] countOffDays( String startTime, String stopTime ) {
+        if ( stopTime.length()<10 || Character.isDigit(stopTime.charAt(10)) ) {
+            throw new IllegalArgumentException("arguments must be $Y-$m-$dZ");
+        }
+        ArrayList<String> result= new ArrayList();
+        String time= startTime.substring(0,11);
+        stopTime= stopTime.substring(0,11);
+        while ( time.compareTo(stopTime)<0 ) {
+            result.add( time );
+            time= nextDay(time);
+        }
+        return result.toArray( new String[result.size()] );
+    }
+    
+    /**
+     * return the data from the cache, or null if the data is not cached.
+     * @param url
+     * @param id
+     * @param sparameters
+     * @param startTime
+     * @param endTime
+     * @return
+     * @throws IOException
+     * @throws JSONException 
+     */
+    public static Iterator<HapiRecord> checkCache( URL url, 
+            String id, 
+            String sparameters,
+            String startTime,
+            String endTime ) throws IOException, JSONException {
         
+        String[] parameters= sparameters.split(",",-2);
+        
+        String s= getHapiCache();
+        if ( s.endsWith("/") ) s= s.substring(0,s.length()-1);
+        
+        StringBuilder ub= new StringBuilder( url.getProtocol() + "/" + url.getHost() + "/" + url.getPath() );
+        if ( url.getQuery()!=null ) {
+            String[] querys= url.getQuery().split("\\&");
+            Pattern p= Pattern.compile("id=(.+)");
+            for ( String q : querys ) {
+                Matcher m= p.matcher(q);
+                if ( m.matches() ) {
+                    ub.append("/").append(m.group(1));
+                    break;
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("query must be specified, implementation error");
+        }
+        
+        String aday= normalizeTimeString(startTime);
+        String lday= normalizeTimeString(endTime);
+        
+        String[] days= countOffDays( aday, lday );
+                
+        // which granules are available for all parameters?
+        boolean[][] hits= new boolean[days.length][parameters.length];
+        File[][] files= new File[days.length][parameters.length];
+        
+        boolean staleCacheFiles;
+        
+        String u= ub.toString();
+        
+        if ( ! new File( s + "/" + u  ).exists() ) {
+            return null;
+        }
+        
+        return null;
+//        try {
+//            FileSystem fs= FileSystem.create( "file:" + s + "/"+ u );
+//            staleCacheFiles= getCacheFilesWithTime( trs, parameters, fs, "csv", hits, files, offline, lastModified );
+//        } catch ( IOException | IllegalArgumentException ex) {
+//            logger.log(Level.FINE, "exception in cache", ex );
+//            return null;
+//        }
+//                
+//        if ( staleCacheFiles && !offline ) {
+//            logger.fine("old cache files found, but new data is available and accessible");
+//            return null;
+//        }
+//    
+//        boolean haveSomething= false;
+//        boolean haveAll= true;
+//        for ( int i=0; i<trs.size(); i++ ) {
+//            for ( int j=0; j<parameters.length; j++ ) {
+//                if ( hits[i][j]==false ) {
+//                    haveAll= false;
+//                }
+//            }
+//            if ( haveAll ) {
+//                haveSomething= true;
+//            }
+//        }
+//        
+//        if ( !haveAll ) {
+//            checkMissingRange(trs, hits, timeRange);
+//        }
+//        
+//        if ( !offline && !haveAll ) {
+//            logger.fine("some cache files missing, but we are on-line and should retrieve all of them");
+//            return null;
+//        }
+//        
+//        if ( !haveSomething ) {
+//            logger.fine("no cached data found");
+//            return null;
+//        }
+//        
+//        AbstractLineReader result;
+//        
+//        long timeStamp= getEarliestTimeStamp(files);
+//        
+//        try {
+//            result= maybeGetCsvCacheReader( url, files, timeStamp );
+//            if ( result!=null ) return result;
+//        } catch ( IOException ex ) {
+//            logger.log( Level.WARNING, null, ex );
+//        }
+//            
+//        AbstractLineReader cacheReader= calculateCsvCacheReader( files );
+//        return cacheReader;
+        
+    }
+    
     /**
      * return the data record-by-record, using the CSV response.
      * @param server
@@ -543,7 +689,15 @@ public class HapiClient {
             String id, 
             String startTime,
             String endTime ) throws IOException, JSONException {
-        return getDataCSV(server, id, startTime, endTime);
+        
+        //Iterator<HapiRecord> result= checkCache( server, id, startTime, endTime );
+        Iterator<HapiRecord> result= null;
+        
+        if ( result!=null ) {
+            return result;
+        } else {
+            return getDataCSV(server, id, startTime, endTime);
+        }
     }
     
     /**
@@ -666,6 +820,13 @@ public class HapiClient {
         if ( time[1]>12 ) throw new IllegalArgumentException("time[1] is greater than 12 (months)");
         
         int leap= isLeapYear(time[0]) ? 1: 0;
+
+        if ( time[1]==12 && time[2]==32 ) {
+            time[0]= time[0]+1;
+            time[1]= 1;
+            time[2]= 1;
+            return;
+        }
         
         int d= DAYS_IN_MONTH[leap][time[1]];
         while ( time[2]>d ) {
@@ -675,6 +836,19 @@ public class HapiClient {
             if ( time[1]>12 ) throw new IllegalArgumentException("time[2] is too big");
         }
         
+    }
+    
+    /**
+     * return $Y-$m-$dT$H:$M:$S.$(subsec,places=9)
+     * @param time any ISO8601 string.
+     * @return the time in standard form.
+     */
+    private static String normalizeTimeString( String time ) {
+        int[] nn= isoTimeToArray( time );
+        return String.format( "%d-%d-%dT%d:%d:%d.%09d", 
+                nn[0], nn[1], nn[2], 
+                nn[3], nn[4], nn[5], 
+                nn[6] );
     }
     
     /**
