@@ -532,6 +532,77 @@ public class HapiClient {
     }
     
     /**
+     * 
+     * @param trs list of times in $Y-$m-$dZ.
+     * @param parameters parameters to read.
+     * @param fs
+     * @param format
+     * @param hits
+     * @param files
+     * @param offline
+     * @param lastModified
+     * @return
+     * @throws IOException
+     * @throws IllegalArgumentException 
+     */
+    private static boolean getCacheFilesWithTime( 
+            String[] trs, 
+            String[] parameters, 
+            String fs, 
+            String format, 
+            boolean[][] hits, 
+            File[][] files, 
+            boolean offline, 
+            long lastModified ) throws IOException, IllegalArgumentException {
+        boolean staleCacheFiles;
+        long timeNow= System.currentTimeMillis();
+        staleCacheFiles= false;
+        for ( int i=0; i<trs.length; i++ ) {
+            String tr= trs[i];
+            for ( int j=0; j<parameters.length; j++ ) {
+                String parameter= parameters[j];
+                String sf= String.format( "%s/%s/%s%s%s.%s.%s", 
+                        tr.substring(0,4), 
+                        tr.substring(5,7),
+                        tr.substring(0,4),
+                        tr.substring(5,7),
+                        tr.substring(8,10),
+                        parameter, 
+                        format );
+                
+                File f= new File( fs + sf );
+                if ( !f.exists() ) {
+                    f= new File( fs + sf + ".gz" );
+                }
+                
+                if ( !f.exists() ) {
+                    hits[i][j]= false;
+                } else {
+                    long ageMillis= timeNow - f.lastModified();
+                    boolean isStale= ( ageMillis > cacheAgeLimitMillis() );
+                    if ( lastModified>0 ) {
+                        isStale= f.lastModified() < lastModified; // Note FAT32 only has 4sec resolution, which could cause problems.
+                        if ( !isStale ) {
+                            LOGGER.fine("server lastModified indicates the cache file can be used");
+                        } else {
+                            LOGGER.fine("server lastModified indicates the cache file should be updated");
+                        }
+                    }
+                    if ( offline || !isStale ) {
+                        hits[i][j]= true;
+                        files[i][j]= f;
+                    } else {
+                        LOGGER.log(Level.FINE, "cached file is too old to use: {0}", f);
+                        hits[i][j]= false;
+                        staleCacheFiles= true;
+                    }
+                }
+            }
+        }
+        return staleCacheFiles;
+    }
+    
+    /**
      * return the data from the cache, or null if the data is not cached.
      * @param url
      * @param id
@@ -585,32 +656,27 @@ public class HapiClient {
             return null;
         }
         
+        staleCacheFiles= getCacheFilesWithTime( days, parameters, "csv", s, hits, files, offline, 0 );
+            
+        if ( staleCacheFiles && !offline ) {
+            LOGGER.fine("old cache files found, but new data is available and accessible");
+            return null;
+        }
+    
+        boolean haveSomething= false;
+        boolean haveAll= true;
+        for ( int i=0; i<trs.length; i++ ) {
+            for ( int j=0; j<parameters.length; j++ ) {
+                if ( hits[i][j]==false ) {
+                    haveAll= false;
+                }
+            }
+            if ( haveAll ) {
+                haveSomething= true;
+            }
+        }
+        
         return null;
-//        try {
-//            FileSystem fs= FileSystem.create( "file:" + s + "/"+ u );
-//            staleCacheFiles= getCacheFilesWithTime( trs, parameters, fs, "csv", hits, files, offline, lastModified );
-//        } catch ( IOException | IllegalArgumentException ex) {
-//            logger.log(Level.FINE, "exception in cache", ex );
-//            return null;
-//        }
-//                
-//        if ( staleCacheFiles && !offline ) {
-//            logger.fine("old cache files found, but new data is available and accessible");
-//            return null;
-//        }
-//    
-//        boolean haveSomething= false;
-//        boolean haveAll= true;
-//        for ( int i=0; i<trs.size(); i++ ) {
-//            for ( int j=0; j<parameters.length; j++ ) {
-//                if ( hits[i][j]==false ) {
-//                    haveAll= false;
-//                }
-//            }
-//            if ( haveAll ) {
-//                haveSomething= true;
-//            }
-//        }
 //        
 //        if ( !haveAll ) {
 //            checkMissingRange(trs, hits, timeRange);
