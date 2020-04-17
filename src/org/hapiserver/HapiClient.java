@@ -531,6 +531,40 @@ public class HapiClient {
         return result.toArray( new String[result.size()] );
     }
     
+//    private static void checkMissingRange( String[] trs, boolean[][] hits, String timeRange) throws IllegalArgumentException {
+//        String missingRange=null;
+//        for ( int i=0; i<trs.length; i++ ) {
+//            for ( int j=0; j<hits[i].length; j++ ) {
+//                if ( hits[i][j]==false ) {
+//                    if ( missingRange==null ) {
+//                        missingRange= trs[i];
+//                    } else {
+//                        missingRange= DatumRangeUtil.union( missingRange, trs.get(i) );
+//                    }
+//                }
+//            }
+//        }
+//        LOGGER.log(Level.FINE, "missingRange={0}", missingRange);
+//        if ( missingRange!=null ) {
+//            if ( missingRange.min().equals(timeRange.min()) || missingRange.max().equals(timeRange.max()) ) {
+//                LOGGER.log(Level.FINE, "candidate for new partial cache, only {0} needs to be loaded.", missingRange);
+//            }
+//        }
+//    }
+
+    private static long getEarliestTimeStamp( File[][] files ) {
+        // digest all this into a single timestamp.  
+        // For each day, what is the oldest any of the granules was created?
+        // For each interval, what was the oldest of any granule?
+        long timeStamp= Long.MAX_VALUE;
+        for (File[] files1 : files) {
+            for (File file1 : files1 ) {
+                timeStamp = Math.min(timeStamp, file1.lastModified());
+            }
+        }
+        return timeStamp;
+    }    
+    
     /**
      * 
      * @param trs list of times in $Y-$m-$dZ.
@@ -665,7 +699,7 @@ public class HapiClient {
     
         boolean haveSomething= false;
         boolean haveAll= true;
-        for ( int i=0; i<trs.length; i++ ) {
+        for ( int i=0; i<days.length; i++ ) {
             for ( int j=0; j<parameters.length; j++ ) {
                 if ( hits[i][j]==false ) {
                     haveAll= false;
@@ -676,21 +710,21 @@ public class HapiClient {
             }
         }
         
+        if ( !haveAll ) {
+            //checkMissingRange(days, hits, timeRange);
+        }
+        
+        if ( !offline && !haveAll ) {
+            LOGGER.fine("some cache files missing, but we are on-line and should retrieve all of them");
+            return null;
+        }
+        
+        if ( !haveSomething ) {
+            LOGGER.fine("no cached data found");
+            return null;
+        }
+        
         return null;
-//        
-//        if ( !haveAll ) {
-//            checkMissingRange(trs, hits, timeRange);
-//        }
-//        
-//        if ( !offline && !haveAll ) {
-//            logger.fine("some cache files missing, but we are on-line and should retrieve all of them");
-//            return null;
-//        }
-//        
-//        if ( !haveSomething ) {
-//            logger.fine("no cached data found");
-//            return null;
-//        }
 //        
 //        AbstractLineReader result;
 //        
