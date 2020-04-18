@@ -1,11 +1,16 @@
 
 package org.hapiserver;
 
+import com.cottagesystems.util.AbstractLineReader;
+import com.cottagesystems.util.ConcatenateBufferedReader;
+import com.cottagesystems.util.PasteBufferedReader;
+import com.cottagesystems.util.SingleFileBufferedReader;
 import java.awt.EventQueue;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,19 +19,20 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -38,7 +44,12 @@ import org.json.JSONObject;
  */
 public class HapiClient {
     
-    private static final Logger LOGGER= Logger.getLogger("org.hapiserver");
+    private static final Logger logger= Logger.getLogger("org.hapiserver");
+    
+    /**
+     * special logger used for http connections.
+     */
+    private static Logger loggerUrl= Logger.getLogger("org.hapiserver.url");
     
     private static final Lock LOCK= new ReentrantLock();
 
@@ -117,7 +128,7 @@ public class HapiClient {
         if ( useCache() ) {
             if ( !new File(hapiCache).exists() ) {
                 if ( !new File(hapiCache).mkdirs() ) {
-                    LOGGER.log(Level.WARNING, "unable to mkdir directories {0}", hapiCache);
+                    logger.log(Level.WARNING, "unable to mkdir directories {0}", hapiCache);
                 }
             }
         }
@@ -178,11 +189,11 @@ public class HapiClient {
         if ( f.exists() && f.canRead() ) {
             long age= System.currentTimeMillis() - f.lastModified();
             if ( age < cacheAgeLimitMillis() || isOffline() ) {
-                LOGGER.log(Level.FINE, "read from hapi cache: {0}", url);
+                logger.log(Level.FINE, "read from hapi cache: {0}", url);
                 String r= readFromFile( f );
                 return r;
             } else {
-                LOGGER.log(Level.FINE, "old cache item will not be used: {0}", url);
+                logger.log(Level.FINE, "old cache item will not be used: {0}", url);
                 return null;
             }
         } else {
@@ -240,7 +251,7 @@ public class HapiClient {
             }
         }
         if ( !f.exists() ) {
-            LOGGER.log(Level.FINE, "write to hapi cache: {0}", url);
+            logger.log(Level.FINE, "write to hapi cache: {0}", url);
             try ( BufferedWriter w= new BufferedWriter( new FileWriter(f) ) ) {
                 w.write(data);
             }
@@ -263,7 +274,7 @@ public class HapiClient {
             String s= readFromCachedURL( url, type );
             if ( s!=null ) return s;
         }
-        LOGGER.log(Level.FINE, "GET {0}", new Object[] { url } );
+        logger.log(Level.FINE, "GET {0}", new Object[] { url } );
         URLConnection urlc= url.openConnection();
         urlc.setConnectTimeout( getConnectTimeoutMs() );
         urlc.setReadTimeout( getReadTimeoutMs() );
@@ -289,14 +300,14 @@ public class HapiClient {
                     }
                     String s2= builder2.toString().trim();
                     if ( type.equals("json") && s2.length()>0 && s2.charAt(0)=='{' ) {
-                        LOGGER.warning("incorrect error code returned, content is JSON");
+                        logger.warning("incorrect error code returned, content is JSON");
                         return s2;
                     }
                 } catch ( IOException ex2 ) {
-                    LOGGER.log( Level.FINE, ex2.getMessage(), ex2 );
+                    logger.log( Level.FINE, ex2.getMessage(), ex2 );
                 }
             }
-            LOGGER.log( Level.FINE, ex.getMessage(), ex );
+            logger.log( Level.FINE, ex.getMessage(), ex );
             LOCK.lock();
             try {
                 if ( useCache() ) {
@@ -325,7 +336,97 @@ public class HapiClient {
         }
         return result;
     }
-
+    
+    private static Iterator<HapiRecord> calculateCsvCacheReader( 
+            JSONObject info, File[][] filess) throws IOException, JSONException {
+        
+        if ( info.getJSONArray("parameters").length()!=filess[0].length ) {
+            throw new IllegalArgumentException("parameters length doesn't equal filess length, something has gone wrong.");
+        }
+        ConcatenateBufferedReader cacheReader= new ConcatenateBufferedReader();
+        for (File[] files : filess) {
+            boolean haveAllForDay= true;
+            if (haveAllForDay) {
+                PasteBufferedReader r1= new PasteBufferedReader();
+                r1.setDelim(',');
+                for (File file : files) {
+                    try {
+                        InputStreamReader oneDayOneParam;
+                        if ( file.getName().endsWith(".gz") ) {
+                            oneDayOneParam= new InputStreamReader( 
+                                            new GZIPInputStream( 
+                                                    new FileInputStream(file)));
+                        } else {
+                            oneDayOneParam= new FileReader(file);
+                        }
+                        r1.pasteBufferedReader( 
+                                new SingleFileBufferedReader( 
+                                        new BufferedReader(oneDayOneParam) ) );
+                    }catch ( IOException ex ) {
+                        logger.log( Level.SEVERE, ex.getMessage(), ex );
+                        return null;
+                    }
+                }
+                cacheReader.concatenateBufferedReader(r1);
+            }   
+        }
+        return new LineReaderHapiRecordIterator( info, cacheReader );
+    }
+        
+    
+    /**
+     * connect to the server, letting it know that you have cached files which
+     * were last modified as of a certain date.  If the server suggests these
+     * be used with a 304 response, then return an implementation based on 
+     * these.  This might also simply return the data (200), and an iterator is
+     * returned for that, possibly decompressing the data.
+     * @param url
+     * @param files
+     * @param timeStamp
+     * @return
+     * @throws IOException 
+     */
+    private static Iterator<HapiRecord> maybeGetDataFromCache(
+            JSONObject info,
+            URL url, 
+            File[][] files, 
+            long lastModified) throws IOException, JSONException {
+        
+        if ( info.getJSONArray("parameters").length()!=files[0].length ) {
+            throw new IllegalArgumentException("parameters length doesn't equal filess length, something has gone wrong.");
+        }
+        
+        HttpURLConnection httpConnect;
+        if ( isOffline() ) {
+            return null;
+            //throw new FileSystem.FileSystemOfflineException("file system is offline");
+        } else {
+            loggerUrl.log(Level.FINE, "GET {0}", new Object[] { url } );            
+            httpConnect= (HttpURLConnection)url.openConnection();
+            httpConnect.setConnectTimeout(getConnectTimeoutMs());
+            httpConnect.setReadTimeout(getReadTimeoutMs());
+            httpConnect.setRequestProperty( "Accept-Encoding", "gzip" );
+            String s= new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z").format(new Date(lastModified));
+            httpConnect.setRequestProperty( "If-Modified-Since", s );
+            //TODOhttpConnect= (HttpURLConnection)HttpUtil.checkRedirect(httpConnect);
+            httpConnect.connect();
+            loggerUrl.log(Level.FINE, "--> {0} {1}", 
+                    new Object[]{httpConnect.getResponseCode(), 
+                        httpConnect.getResponseMessage()});
+        }
+        if ( httpConnect.getResponseCode()==304 ) {
+            logger.fine("using cache files because server says nothing has changed (304)");
+            return calculateCsvCacheReader( info, files );
+        }
+        boolean gzip= "gzip".equals( httpConnect.getContentEncoding() );
+        BufferedReader reader= new BufferedReader( 
+            new InputStreamReader( gzip ? 
+                    new GZIPInputStream( httpConnect.getInputStream() ) : 
+                    httpConnect.getInputStream() ) );
+        AbstractLineReader result= new SingleFileBufferedReader( reader );
+        return new LineReaderHapiRecordIterator( info, result );
+    }        
+    
     /**
      * return the catalog as a JSONObject.  For example:
      * <code><pre>
@@ -344,7 +445,7 @@ public class HapiClient {
     public static org.json.JSONObject getCatalog( URL server ) 
             throws IOException, JSONException {
         if ( EventQueue.isDispatchThread() ) {
-            LOGGER.warning("HAPI network call on event thread");
+            logger.warning("HAPI network call on event thread");
         }        
         URL url;
         url= new URL( server, "catalog" );
@@ -388,7 +489,7 @@ public class HapiClient {
     public static org.json.JSONObject getInfo( URL server, String id ) 
             throws IOException, JSONException {
         if ( EventQueue.isDispatchThread() ) {
-            LOGGER.warning("HAPI network call on event thread");
+            logger.warning("HAPI network call on event thread");
         }        
         URL url;
         try {
@@ -415,7 +516,7 @@ public class HapiClient {
     public static JSONObject getInfo(URL server, String id, String parameters) 
             throws IOException, JSONException {
         if ( EventQueue.isDispatchThread() ) {
-            LOGGER.warning("HAPI network call on event thread");
+            logger.warning("HAPI network call on event thread");
         }        
         URL url;
         try {
@@ -439,10 +540,12 @@ public class HapiClient {
             }
             String sbs= sb.toString();
             if ( !sbs.equals(parameters) ) {
-                throw new IllegalArgumentException("parameters must be requested in order, use instead "+sbs);
+                throw new IllegalArgumentException(
+                        "parameters must be requested in order, use instead "+sbs);
             }
         } else {
-            throw new IllegalArgumentException("number of parameters in result doesn't jibe with request");
+            throw new IllegalArgumentException(
+                    "number of parameters in result doesn't jibe with request");
         }
         
         return o;
@@ -486,6 +589,11 @@ public class HapiClient {
         
         JSONObject info= getInfo( server, id );
         
+        Iterator<HapiRecord> result= checkCache( info, server, id, startTime, endTime );
+        if ( result!=null ) {
+            return result;
+        }
+
         URL dataURL= new URL( server, 
                 "data?id="+id 
                 + "&time.min="+startTime 
@@ -569,7 +677,7 @@ public class HapiClient {
      * 
      * @param trs list of times in $Y-$m-$dZ.
      * @param parameters parameters to read.
-     * @param fs
+     * @param cacheRootForDataset file system which contains the cached data.
      * @param format
      * @param hits
      * @param files
@@ -581,13 +689,19 @@ public class HapiClient {
      */
     private static boolean getCacheFilesWithTime( 
             String[] trs, 
+            String id,
             String[] parameters, 
-            String fs, 
+            String cacheRootForDataset, 
             String format, 
             boolean[][] hits, 
             File[][] files, 
             boolean offline, 
             long lastModified ) throws IOException, IllegalArgumentException {
+        
+        if ( !cacheRootForDataset.endsWith("/") ) {
+            throw new IllegalArgumentException("fs must end in slash (/)");
+        }
+        
         boolean staleCacheFiles;
         long timeNow= System.currentTimeMillis();
         staleCacheFiles= false;
@@ -604,9 +718,9 @@ public class HapiClient {
                         parameter, 
                         format );
                 
-                File f= new File( fs + sf );
+                File f= new File( cacheRootForDataset + "/" + sf );
                 if ( !f.exists() ) {
-                    f= new File( fs + sf + ".gz" );
+                    f= new File( cacheRootForDataset + "/" + sf + ".gz" );
                 }
                 
                 if ( !f.exists() ) {
@@ -617,16 +731,16 @@ public class HapiClient {
                     if ( lastModified>0 ) {
                         isStale= f.lastModified() < lastModified; // Note FAT32 only has 4sec resolution, which could cause problems.
                         if ( !isStale ) {
-                            LOGGER.fine("server lastModified indicates the cache file can be used");
+                            logger.fine("server lastModified indicates the cache file can be used");
                         } else {
-                            LOGGER.fine("server lastModified indicates the cache file should be updated");
+                            logger.fine("server lastModified indicates the cache file should be updated");
                         }
                     }
                     if ( offline || !isStale ) {
                         hits[i][j]= true;
                         files[i][j]= f;
                     } else {
-                        LOGGER.log(Level.FINE, "cached file is too old to use: {0}", f);
+                        logger.log(Level.FINE, "cached file is too old to use: {0}", f);
                         hits[i][j]= false;
                         staleCacheFiles= true;
                     }
@@ -638,25 +752,34 @@ public class HapiClient {
     
     /**
      * return the data from the cache, or null if the data is not cached.
-     * @param url
-     * @param id
-     * @param sparameters
-     * @param startTime
-     * @param endTime
-     * @return
+     * @param info the info response for the data request.
+     * @param url the URL which will be used to load data, not just the HAPI server location.
+     * @param id the dataset id.
+     * @param startTime the start time
+     * @param endTime then end time.
+     * @return null or an iterator
      * @throws IOException
      * @throws JSONException 
      */
-    public static Iterator<HapiRecord> checkCache( URL url, 
+    private static Iterator<HapiRecord> checkCache( 
+            JSONObject info,
+            URL url, 
             String id, 
-            String sparameters,
             String startTime,
             String endTime ) throws IOException, JSONException {
         
-        String[] parameters= sparameters.split(",",-2);
+        if ( true ) {
+            throw new IllegalArgumentException("cache response needs to be trimmed");
+        }
+        
+        String[] parameters;
+        JSONArray array= info.getJSONArray("parameters");
+        parameters= new String[array.length()];
+        for ( int i=0; i<array.length(); i++ ) {
+            parameters[i]= array.getJSONObject(i).getString("name");
+        }
         
         String s= getHapiCache();
-        if ( s.endsWith("/") ) s= s.substring(0,s.length()-1);
         
         StringBuilder ub= new StringBuilder( url.getProtocol() + "/" + url.getHost() + "/" + url.getPath() );
         if ( url.getQuery()!=null ) {
@@ -686,14 +809,17 @@ public class HapiClient {
         
         String u= ub.toString();
         
-        if ( ! new File( s + "/" + u  ).exists() ) {
+        String cacheRootForDataset= s + u + "/";
+        if ( ! new File( cacheRootForDataset ).exists() ) {
+            // nothing in the cache, give up immediately.
             return null;
         }
         
-        staleCacheFiles= getCacheFilesWithTime( days, parameters, "csv", s, hits, files, offline, 0 );
+        staleCacheFiles= getCacheFilesWithTime( days, id, parameters, 
+                cacheRootForDataset, "csv", hits, files, offline, 0 );
             
         if ( staleCacheFiles && !offline ) {
-            LOGGER.fine("old cache files found, but new data is available and accessible");
+            logger.fine("old cache files found, but new data is available and accessible");
             return null;
         }
     
@@ -715,30 +841,28 @@ public class HapiClient {
         }
         
         if ( !offline && !haveAll ) {
-            LOGGER.fine("some cache files missing, but we are on-line and should retrieve all of them");
+            logger.fine("some cache files missing, but we are on-line and should retrieve all of them");
             return null;
         }
         
         if ( !haveSomething ) {
-            LOGGER.fine("no cached data found");
+            logger.fine("no cached data found");
             return null;
         }
         
-        return null;
-//        
-//        AbstractLineReader result;
-//        
-//        long timeStamp= getEarliestTimeStamp(files);
-//        
-//        try {
-//            result= maybeGetCsvCacheReader( url, files, timeStamp );
-//            if ( result!=null ) return result;
-//        } catch ( IOException ex ) {
-//            logger.log( Level.WARNING, null, ex );
-//        }
-//            
-//        AbstractLineReader cacheReader= calculateCsvCacheReader( files );
-//        return cacheReader;
+        Iterator<HapiRecord> result;
+
+        long timeStamp= getEarliestTimeStamp(files);
+        
+        try {
+            result= maybeGetDataFromCache( info, url, files, timeStamp );
+            if ( result!=null ) return result;
+        } catch ( IOException ex ) {
+            logger.log( Level.WARNING, null, ex );
+        }
+        
+        result= calculateCsvCacheReader( info, files );
+        return result;
         
     }
     
@@ -761,13 +885,18 @@ public class HapiClient {
             String endTime ) throws IOException, JSONException {
         
         JSONObject info= getInfo( server, id, parameters );
-        
+
         URL dataURL= new URL( server, 
                 "data?id="+id 
                 + "&parameters="+parameters 
                 + "&time.min="+startTime 
                 + "&time.max="+endTime );
-        
+                
+        Iterator<HapiRecord> result= checkCache( info, dataURL, id, startTime, endTime );
+        if ( result!=null ) {
+            return result;
+        }
+                
         InputStream ins= dataURL.openStream();
         BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
         return new HapiClientIterator( info, reader );
@@ -789,15 +918,9 @@ public class HapiClient {
             String id, 
             String startTime,
             String endTime ) throws IOException, JSONException {
-        
-        //Iterator<HapiRecord> result= checkCache( server, id, startTime, endTime );
-        Iterator<HapiRecord> result= null;
-        
-        if ( result!=null ) {
-            return result;
-        } else {
-            return getDataCSV(server, id, startTime, endTime);
-        }
+                
+        return getDataCSV(server, id, startTime, endTime);
+       
     }
     
     /**
@@ -945,7 +1068,7 @@ public class HapiClient {
      */
     private static String normalizeTimeString( String time ) {
         int[] nn= isoTimeToArray( time );
-        return String.format( "%d-%d-%dT%d:%d:%d.%09d", 
+        return String.format( "%d-%02d-%02dT%02d:%02d:%02d.%09d", 
                 nn[0], nn[1], nn[2], 
                 nn[3], nn[4], nn[5], 
                 nn[6] );

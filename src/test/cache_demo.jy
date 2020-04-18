@@ -1,0 +1,19 @@
+from org.hapiserver.HapiClient import *
+
+from java.util.logging import Logger,Level
+Logger.getLogger('org.hapiserver').setLevel(Level.FINE)
+
+hapiServer= URL( "https://jfaden.net/HapiServerDemo/hapi/" )
+
+ID= 'Iowa+City+Conditions'
+parameters= 'Temperature,Humidity'
+
+info= getInfo( hapiServer,ID, parameters ) 
+it= getData( hapiServer,ID, parameters, '2019-10-21T00:00', '2019-10-22T00:00' )
+
+print '--- data ---'
+while ( it.hasNext() ):
+    r= it.next()
+    print r.getIsoTime(0), r.getDouble(1), r.getDouble(2)
+    
+# https://jfaden.net/HapiServerDemo/hapi/data?id=Iowa+City+Conditions&start.time=2020-01-01T00:00Z&stop.time=2020-02-01T00:00Z
