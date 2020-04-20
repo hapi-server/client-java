@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package org.hapiserver;
 
 import java.util.Map;
@@ -11,7 +7,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- *
+ * convert CSV records into HapiRecords.
  * @author jbf
  */
 public class CSVHapiRecordConverter {

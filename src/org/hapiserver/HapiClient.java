@@ -20,10 +20,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAccessor;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.locks.Lock;
@@ -571,41 +567,6 @@ public class HapiClient {
         return result;
     }
     
-    /**
-     * return the data record-by-record, using the CSV response.
-     * @param server
-     * @param id
-     * @param startTime
-     * @param endTime
-     * @return Iterator, which will return records until the stream is empty.
-     * @throws java.io.IOException  
-     * @throws org.json.JSONException should the server return an invalid response.
-     */
-    public static Iterator<HapiRecord> getDataCSV( 
-            URL server, 
-            String id, 
-            String startTime,
-            String endTime ) throws IOException, JSONException {
-        
-        JSONObject info= getInfo( server, id );
-        
-        Iterator<HapiRecord> result= checkCache( info, server, id, startTime, endTime );
-        if ( result!=null ) {
-            return result;
-        }
-
-        URL dataURL= new URL( server, 
-                "data?id="+id 
-                + "&time.min="+startTime 
-                + "&time.max="+endTime );
-        
-        InputStream ins= dataURL.openStream();
-        BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
-        return new HapiClientIterator( info, reader );
-        
-    }
-    
-    
 //    private static void checkMissingRange( String[] trs, boolean[][] hits, String timeRange) throws IllegalArgumentException {
 //        String missingRange=null;
 //        for ( int i=0; i<trs.length; i++ ) {
@@ -641,7 +602,7 @@ public class HapiClient {
     }    
     
     /**
-     * 
+     * Figure out which files from the cache can be used.
      * @param trs list of times in $Y-$m-$dZ.
      * @param parameters parameters to read.
      * @param cacheRootForDataset file system which contains the cached data.
@@ -845,6 +806,39 @@ public class HapiClient {
      * return the data record-by-record, using the CSV response.
      * @param server
      * @param id
+     * @param startTime
+     * @param endTime
+     * @return Iterator, which will return records until the stream is empty.
+     * @throws java.io.IOException  
+     * @throws org.json.JSONException should the server return an invalid response.
+     */
+    public static Iterator<HapiRecord> getDataCSV( 
+            URL server, 
+            String id, 
+            String startTime,
+            String endTime ) throws IOException, JSONException {
+        
+        JSONObject info= getInfo( server, id );
+
+        URL dataURL= new URL( server, 
+            "data?id="+id 
+            + "&time.min="+startTime 
+            + "&time.max="+endTime );
+        
+        Iterator<HapiRecord> result= checkCache( info, dataURL, id, startTime, endTime );
+        if ( result!=null ) {
+            return result;
+        } else {
+            InputStream ins= dataURL.openStream();
+            BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
+            return new HapiClientIterator( info, reader );
+        }
+    }
+    
+    /**
+     * return the data record-by-record, using the CSV response.
+     * @param server
+     * @param id
      * @param parameters
      * @param startTime
      * @param endTime
@@ -870,11 +864,11 @@ public class HapiClient {
         Iterator<HapiRecord> result= checkCache( info, dataURL, id, startTime, endTime );
         if ( result!=null ) {
             return result;
+        } else {
+            InputStream ins= dataURL.openStream();
+            BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
+            return new HapiClientIterator( info, reader );
         }
-                
-        InputStream ins= dataURL.openStream();
-        BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
-        return new HapiClientIterator( info, reader );
         
     }
         
