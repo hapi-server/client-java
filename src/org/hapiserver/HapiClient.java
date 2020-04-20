@@ -393,7 +393,7 @@ public class HapiClient {
             long lastModified) throws IOException, JSONException {
         
         if ( info.getJSONArray("parameters").length()!=files[0].length ) {
-            throw new IllegalArgumentException("parameters length doesn't equal filess length, something has gone wrong.");
+            throw new IllegalArgumentException("parameters length doesn't equal files length, something has gone wrong.");
         }
         
         HttpURLConnection httpConnect;
@@ -620,20 +620,35 @@ public class HapiClient {
     }
     
     /**
+     * return the $Y-$m-$dT00:00:00.000000000Z of the next boundary, or
+     * the same value (normalized) if we are already at a boundary.
+     * @param day
+     * @return the next midnight or the value if already at midnight.
+     */
+    public static String ceil( String day ) {
+        day= normalizeTimeString(day);
+        if ( day.substring(11).equals("00:00:00.000000000Z") ) {
+            return day;
+        } else {
+            return nextDay(day.substring(0,11)).substring(0,10)+"T00:00:00.000000000Z";
+        }
+    }
+    
+    /**
      * 
-     * @param startTime must be $Y-$m-$dT...
-     * @param stopTime must be $Y-$m-$dT...
-     * @return array of times.
+     * @param startTime an iso time string
+     * @param stopTime an iso time string
+     * @return array of times, complete days, in the form $Y-$m-$d
      */
     public static String[] countOffDays( String startTime, String stopTime ) {
         if ( stopTime.length()<10 || Character.isDigit(stopTime.charAt(10)) ) {
             throw new IllegalArgumentException("arguments must be $Y-$m-$dZ");
         }
         ArrayList<String> result= new ArrayList();
-        String time= startTime.substring(0,11);
-        stopTime= stopTime.substring(0,11);
+        String time= normalizeTimeString(startTime).substring(0,10)+'Z';
+        stopTime= ceil(stopTime).substring(0,10)+'Z';
         while ( time.compareTo(stopTime)<0 ) {
-            result.add( time );
+            result.add( time.substring(0) );
             time= nextDay(time);
         }
         return result.toArray( new String[result.size()] );
@@ -702,6 +717,10 @@ public class HapiClient {
             throw new IllegalArgumentException("fs must end in slash (/)");
         }
         
+        if ( trs.length>0 && trs[0].charAt(10)!='Z' ) {
+            throw new IllegalArgumentException("times must be $Y-$m-$dZ");
+        }
+        
         boolean staleCacheFiles;
         long timeNow= System.currentTimeMillis();
         staleCacheFiles= false;
@@ -751,7 +770,14 @@ public class HapiClient {
     }
     
     /**
-     * return the data from the cache, or null if the data is not cached.
+     * return the data from the cache, or null if the data is not cached.  There
+     * are three modes of caching:
+     * <ul>
+     * <li> no cache file exists in our cache and we need to download it (populating the cache).  
+     * <li> the file exists and we need to request the data from the server with an if-modified-since keyword.
+     * <li> the file exists and we don't have internet access, so use it.
+     * <li> the have checked recently and we can trivially use what's in the cache.
+     * </ul>
      * @param info the info response for the data request.
      * @param url the URL which will be used to load data, not just the HAPI server location.
      * @param id the dataset id.
@@ -768,10 +794,6 @@ public class HapiClient {
             String startTime,
             String endTime ) throws IOException, JSONException {
         
-        if ( true ) {
-            throw new IllegalArgumentException("cache response needs to be trimmed");
-        }
-        
         String[] parameters;
         JSONArray array= info.getJSONArray("parameters");
         parameters= new String[array.length()];
@@ -781,7 +803,8 @@ public class HapiClient {
         
         String s= getHapiCache();
         
-        StringBuilder ub= new StringBuilder( url.getProtocol() + "/" + url.getHost() + "/" + url.getPath() );
+        StringBuilder ub= new StringBuilder( 
+                url.getProtocol() + "/" + url.getHost() + "/" + url.getPath() );
         if ( url.getQuery()!=null ) {
             String[] querys= url.getQuery().split("\\&");
             Pattern p= Pattern.compile("id=(.+)");
@@ -795,11 +818,8 @@ public class HapiClient {
         } else {
             throw new IllegalArgumentException("query must be specified, implementation error");
         }
-        
-        String aday= normalizeTimeString(startTime);
-        String lday= normalizeTimeString(endTime);
-        
-        String[] days= countOffDays( aday, lday );
+                
+        String[] days= countOffDays( startTime, endTime );
                 
         // which granules are available for all parameters?
         boolean[][] hits= new boolean[days.length][parameters.length];
@@ -856,7 +876,10 @@ public class HapiClient {
         
         try {
             result= maybeGetDataFromCache( info, url, files, timeStamp );
-            if ( result!=null ) return result;
+            if ( result!=null ) {
+                result= new TrimHapiRecordIterator(result,startTime,endTime);
+                return result;
+            }
         } catch ( IOException ex ) {
             logger.log( Level.WARNING, null, ex );
         }
@@ -1062,13 +1085,13 @@ public class HapiClient {
     }
     
     /**
-     * return $Y-$m-$dT$H:$M:$S.$(subsec,places=9)
+     * return $Y-$m-$dT$H:$M:$S.$(subsec,places=9)Z
      * @param time any ISO8601 string.
      * @return the time in standard form.
      */
-    private static String normalizeTimeString( String time ) {
+    public static String normalizeTimeString( String time ) {
         int[] nn= isoTimeToArray( time );
-        return String.format( "%d-%02d-%02dT%02d:%02d:%02d.%09d", 
+        return String.format( "%d-%02d-%02dT%02d:%02d:%02d.%09dZ", 
                 nn[0], nn[1], nn[2], 
                 nn[3], nn[4], nn[5], 
                 nn[6] );
@@ -1076,6 +1099,7 @@ public class HapiClient {
     
     /**
      * return array [ year, months, days, hours, minutes, seconds, nanoseconds ]
+     * preserving the day of year notation if this was used.
      * @param time
      * @return the decomposed time
      */

@@ -1,0 +1,28 @@
+setScriptTitle('Trim Demo')
+setScriptDescription('Demo how data from the cache is properly trimmed')
+
+rload= getParam( 'reload', 'T', 'Use Autoplot reader to repopulate the cache' )
+if ( rload=='T' ):
+    from java.util.logging import Logger,Level
+    Logger.getLogger('apdss.hapi').setLevel(Level.FINE)
+    ds= getDataSet( 'vap+hapi:https://jfaden.net/HapiServerDemo/hapi?id=Iowa+City+Conditions&timerange=2019-10-21' )
+    
+from org.hapiserver.HapiClient import *
+
+hapiServer= URL( "https://jfaden.net/HapiServerDemo/hapi/" )
+
+ID= 'Iowa+City+Conditions'
+
+print '--- ' + ID + ' ---'
+parameters= getInfoParametersArray(hapiServer, ID )
+for p in parameters:
+    print p
+
+it= getData( hapiServer, 'Iowa+City+Conditions', 'Temperature,Humidity', '2019-10-21T02:20', '2019-10-21T05:20' )
+
+print '--- data ---'
+while ( it.hasNext() ):
+    r= it.next()
+    print r.getIsoTime(0), r.getDouble(1), r.getDouble(2)
+    
+# https://jfaden.net/HapiServerDemo/hapi/data?id=Iowa+City+Conditions&start.time=2020-01-01T00:00Z&stop.time=2020-02-01T00:00Z
