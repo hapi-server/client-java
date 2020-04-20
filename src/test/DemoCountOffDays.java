@@ -6,6 +6,7 @@
 package test;
 
 import org.hapiserver.HapiClient;
+import org.hapiserver.TimeUtil;
 
 /**
  *
@@ -13,7 +14,7 @@ import org.hapiserver.HapiClient;
  */
 public class DemoCountOffDays {
     public static void main( String[] args ) {
-        String[] ss= HapiClient.countOffDays("2015-12-30Z", "2016-03-02Z" );
+        String[] ss= TimeUtil.countOffDays("2015-12-30Z", "2016-03-02Z" );
         for ( String s: ss ) {
             System.err.println(s);
         }

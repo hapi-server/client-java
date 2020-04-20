@@ -24,11 +24,11 @@ public class TrimHapiRecordIterator implements Iterator<HapiRecord>  {
     
     private String rewriteIsoTime( String time, String exampleForm ) {
         char c= exampleForm.charAt(8);
-        int[] nn= HapiClient.isoTimeToArray(HapiClient.normalizeTimeString(time));
+        int[] nn= TimeUtil.isoTimeToArray(TimeUtil.normalizeTimeString(time));
         switch (c) {
             case 'T':
                 // $Y-$jT
-                nn[2]= HapiClient.dayOfYear( nn[0], nn[1], nn[2] );
+                nn[2]= TimeUtil.dayOfYear( nn[0], nn[1], nn[2] );
                 nn[1]= 1;
                 time= String.format( "%d-%03dT%02d:%02d:%02d.%09dZ",
                         nn[0], nn[2],
@@ -36,7 +36,7 @@ public class TrimHapiRecordIterator implements Iterator<HapiRecord>  {
                         nn[6] );
                 break;
             case 'Z':
-                nn[2]= HapiClient.dayOfYear( nn[0], nn[1], nn[2] );
+                nn[2]= TimeUtil.dayOfYear( nn[0], nn[1], nn[2] );
                 nn[1]= 1;
                 time= String.format( "%d-%03dZ",
                         nn[0], nn[2] );
