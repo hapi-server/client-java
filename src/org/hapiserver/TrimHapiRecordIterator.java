@@ -25,29 +25,34 @@ public class TrimHapiRecordIterator implements Iterator<HapiRecord>  {
     private String rewriteIsoTime( String time, String exampleForm ) {
         char c= exampleForm.charAt(8);
         int[] nn= HapiClient.isoTimeToArray(HapiClient.normalizeTimeString(time));
-        if ( c=='T' ) { // $Y-$jT
-            nn[2]= HapiClient.dayOfYear( nn[0], nn[1], nn[2] );
-            nn[1]= 1;
-            time= String.format( "%d-%03dT%02d:%02d:%02d.%09dZ", 
-                nn[0], nn[2], 
-                nn[3], nn[4], nn[5], 
-                nn[6] );
-        } else if ( c=='Z' ) {
-            nn[2]= HapiClient.dayOfYear( nn[0], nn[1], nn[2] );
-            nn[1]= 1;
-            time= String.format( "%d-%03dZ", 
-                nn[0], nn[2] );
-        } else {
-            c= exampleForm.charAt(10);
-            if ( c=='T' ) { // $Y-$jT
-                time= String.format( "%d-%02d-%02dT%02d:%02d:%02d.%09dZ", 
-                    nn[0], nn[1], nn[2], 
-                    nn[3], nn[4], nn[5], 
-                    nn[6] );
-            } else if ( c=='Z' ) {
-                time= String.format( "%d-%02d-%02dZ", 
-                    nn[0], nn[1], nn[2] );
-            }
+        switch (c) {
+            case 'T':
+                // $Y-$jT
+                nn[2]= HapiClient.dayOfYear( nn[0], nn[1], nn[2] );
+                nn[1]= 1;
+                time= String.format( "%d-%03dT%02d:%02d:%02d.%09dZ",
+                        nn[0], nn[2],
+                        nn[3], nn[4], nn[5],
+                        nn[6] );
+                break;
+            case 'Z':
+                nn[2]= HapiClient.dayOfYear( nn[0], nn[1], nn[2] );
+                nn[1]= 1;
+                time= String.format( "%d-%03dZ",
+                        nn[0], nn[2] );
+                break;
+            default:
+                c= exampleForm.charAt(10);
+                if ( c=='T' ) { // $Y-$jT
+                    time= String.format( "%d-%02d-%02dT%02d:%02d:%02d.%09dZ",
+                            nn[0], nn[1], nn[2],
+                            nn[3], nn[4], nn[5],
+                            nn[6] );
+                } else if ( c=='Z' ) {
+                    time= String.format( "%d-%02d-%02dZ",
+                            nn[0], nn[1], nn[2] );
+                }   
+                break;
         }
         if ( exampleForm.endsWith("Z") ) {
             return time.substring(0,exampleForm.length()-1)+"Z";
