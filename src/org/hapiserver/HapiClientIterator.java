@@ -9,7 +9,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- *
+ * Implementation of the iterator, sourced by a BufferedReader.
+ * This uses a CSVHapiRecordConverter to convert each line into
+ * a HapiRecord.
  * @author jbf
  */
 public class HapiClientIterator implements Iterator<HapiRecord> {

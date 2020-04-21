@@ -12,8 +12,8 @@ public interface HapiRecord {
      * returns the time as ISO-8601 encoded string
      * @param i the index of the column
      * @return the time as ISO-8601 encoded string
-     * @see HapiClient#toMillisecondsSince1970(java.lang.String) to get the long milliseconds.
-     * @see HapiClient#isoTimeToArray(java.lang.String) to decompose the time.
+     * @see TimeUtil#toMillisecondsSince1970(java.lang.String) to get the long milliseconds.
+     * @see TimeUtil#isoTimeToArray(java.lang.String) to decompose the time.
      */
     String getIsoTime(int i);
 
