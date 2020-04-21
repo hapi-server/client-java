@@ -20,6 +20,51 @@ import java.util.Date;
  */
 public class TimeUtil {
 
+    /**
+     * Rewrite the time using the format of the example time.  For example,
+     * <pre>
+     * {@code
+     * from org.hapiserver.TimeUtil import *
+     * print rewriteIsoTime( '2020-01-01T00:00Z', '2020-112Z' ) # ->  '2020-04-21T00:00Z'
+     * }
+     * </pre>
+     * This allows direct comparisons of times for sorting.
+     * @param exampleForm
+     * @param time
+     * @return 
+     */
+    public static String reformatIsoTime(String exampleForm, String time) {
+        char c = exampleForm.charAt(8);
+        int[] nn = TimeUtil.isoTimeToArray(TimeUtil.normalizeTimeString(time));
+        switch (c) {
+            case 'T':
+                // $Y-$jT
+                nn[2] = TimeUtil.dayOfYear(nn[0], nn[1], nn[2]);
+                nn[1] = 1;
+                time = String.format("%d-%03dT%02d:%02d:%02d.%09dZ", nn[0], nn[2], nn[3], nn[4], nn[5], nn[6]);
+                break;
+            case 'Z':
+                nn[2] = TimeUtil.dayOfYear(nn[0], nn[1], nn[2]);
+                nn[1] = 1;
+                time = String.format("%d-%03dZ", nn[0], nn[2]);
+                break;
+            default:
+                c = exampleForm.charAt(10);
+                if (c == 'T') {
+                    // $Y-$jT
+                    time = String.format("%d-%02d-%02dT%02d:%02d:%02d.%09dZ", nn[0], nn[1], nn[2], nn[3], nn[4], nn[5], nn[6]);
+                } else if (c == 'Z') {
+                    time = String.format("%d-%02d-%02dZ", nn[0], nn[1], nn[2]);
+                }
+                break;
+        }
+        if (exampleForm.endsWith("Z")) {
+            return time.substring(0, exampleForm.length() - 1) + "Z";
+        } else {
+            return time.substring(0, exampleForm.length());
+        }
+    }
+
     private TimeUtil() {
         // this class is not instanciated.
     }
@@ -155,7 +200,7 @@ public class TimeUtil {
     /**
      * return array [ year, months, days, hours, minutes, seconds, nanoseconds ]
      * preserving the day of year notation if this was used.
-     * @param time
+     * @param time isoTime to decompose
      * @return the decomposed time
      */
     public static int[] isoTimeToArray(String time) {
