@@ -29,6 +29,10 @@ public class TimeUtil {
      * }
      * </pre>
      * This allows direct comparisons of times for sorting.
+     * TODO: there's an optimization here, where if input and output are both $Y-$j or
+     * both $Y-$m-$d, then we need not break apart and recombine the time 
+     * (isoTimeToArray call can be avoided).
+     * 
      * @param exampleForm
      * @param time
      * @return 
