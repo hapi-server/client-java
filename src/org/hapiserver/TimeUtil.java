@@ -9,6 +9,13 @@ import java.util.Date;
 
 /**
  * Utilities for times in IsoTime strings (limited set of ISO8601 times)
+ * Examples of isoTime strings include:<ul>
+ * <li>2020-04-21Z
+ * <li>2020-04-21T12:20Z
+ * <li>2020-04-21T23:45:67.000000001Z  (nanosecond limit)
+ * <li>2020-112Z (day-of-year instead of $Y-$m-$d
+ * <li>2020-112T23:45:67.000000001 (note Z is assumed)
+ * </ul>
  * @author jbf
  */
 public class TimeUtil {
@@ -55,9 +62,11 @@ public class TimeUtil {
     }
 
     /**
-     * return the next day boundary.
-     * @param day
-     * @return
+     * return the next day boundary.  Note hours, minutes, seconds and nanoseconds are ignored.
+     * @param day isoTime string
+     * @return the next day in $Y-$m-$dZ
+     * @see #ceil(java.lang.String) 
+     * @see #previousDay(java.lang.String) 
      */
     public static String nextDay(String day) {
         int[] nn = isoTimeToArray(day);
@@ -66,6 +75,20 @@ public class TimeUtil {
         return String.format("%04d-%02d-%02dZ", nn[0], nn[1], nn[2]);
     }
 
+    /**
+     * return the previous day boundary.  Note hours, minutes, seconds and nanoseconds are ignored.
+     * @param day isoTime string
+     * @return the next day in $Y-$m-$dZ
+     * @see #floor(java.lang.String) 
+     * @see #nextDay(java.lang.String) 
+     */
+    public static String previousDay(String day) {
+        int[] nn = isoTimeToArray(day);
+        nn[2] = nn[2] - 1;
+        normalizeTime(nn);
+        return String.format("%04d-%02d-%02dZ", nn[0], nn[1], nn[2]);
+    }
+    
     /**
      * return the $Y-$m-$dT00:00:00.000000000Z of the next boundary, or
      * the same value (normalized) if we are already at a boundary.
@@ -81,6 +104,21 @@ public class TimeUtil {
         }
     }
 
+    /**
+     * return the $Y-$m-$dT00:00:00.000000000Z of the next boundary, or
+     * the same value (normalized) if we are already at a boundary.
+     * @param day
+     * @return the next midnight or the value if already at midnight.
+     */
+    public static String floor(String day) {
+        day = normalizeTimeString(day);
+        if (day.substring(11).equals("00:00:00.000000000Z")) {
+            return day;
+        } else {
+            return day.substring(0, 10) + "T00:00:00.000000000Z";
+        }
+    }
+    
     /**
      * return $Y-$m-$dT$H:$M:$S.$(subsec,places=9)Z
      * @param time any ISO8601 string.
@@ -157,11 +195,11 @@ public class TimeUtil {
     }
 
     /**
-     * return the doy of year of the month and day for the year.  For example,
+     * return the doy of year of the month and day for the year.  For example, in Jython:
      * <pre>
      * {@code
      * from org.hapiserver.TimeUtil import *
-     * print dayOfYear( 2000, 5, 29 ) # 150
+     * print dayOfYear( 2020, 4, 21 ) # 112
      * }
      * </pre>
      * @param year the year
@@ -178,6 +216,9 @@ public class TimeUtil {
         }
         if (month > 12) {
             throw new IllegalArgumentException("month must be less than 12.");
+        }
+        if ( day>366 ) {
+            throw new IllegalArgumentException("day ("+day+") must be less than 366.");
         }
         int leap = isLeapYear(year) ? 1 : 0;
         return DAY_OFFSET[leap][month] + day;
@@ -206,7 +247,11 @@ public class TimeUtil {
 
     /**
      * normalize the decomposed time by expressing day of year and month
-     * and day of month, and moving hour="24" into the next day.
+     * and day of month, and moving hour="24" into the next day. This
+     * also handles day increment or decrements, by:<ul>
+     * <li>handle day=0 by decrementing month and adding the days in the new month.
+     * <li>handle day=32 by incrementing month.
+     * </ul>
      * @param time
      */
     private static void normalizeTime(int[] time) {
@@ -220,12 +265,20 @@ public class TimeUtil {
         if (time[1] > 12) {
             throw new IllegalArgumentException("time[1] is greater than 12 (months)");
         }
-        int leap = isLeapYear(time[0]) ? 1 : 0;
         if (time[1] == 12 && time[2] == 32) {
             time[0] = time[0] + 1;
             time[1] = 1;
             time[2] = 1;
             return;
+        }
+        int leap = isLeapYear(time[0]) ? 1 : 0;
+        if ( time[2]==0 ) {
+            time[1]= time[1]-1;
+            if ( time[1]==0 ) {
+                time[0]= time[0]-1;
+                time[1]= 12;
+            }
+            time[2]= TimeUtil.DAYS_IN_MONTH[leap][time[1]];
         }
         int d = TimeUtil.DAYS_IN_MONTH[leap][time[1]];
         while (time[2] > d) {
