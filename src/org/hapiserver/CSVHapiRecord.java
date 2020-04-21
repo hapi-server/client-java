@@ -56,4 +56,9 @@ public class CSVHapiRecord implements HapiRecord {
     public String toString() {
         return String.format( "%s: %d fields", fields[0], fields.length );
     }
+
+    @Override
+    public String getAsString(int i) {
+        return fields[i];
+    }
 }

@@ -47,6 +47,13 @@ public interface HapiRecord {
     int getInteger(int i);
 
     /**
+     * get the value as a formatted value.
+     * @param i
+     * @return the string value.
+     */
+    String getAsString( int i );
+        
+    /**
      * return the number of items.
      * @return the number of items.
      */
