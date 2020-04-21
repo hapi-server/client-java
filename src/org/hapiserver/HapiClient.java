@@ -19,6 +19,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
@@ -831,7 +832,12 @@ public class HapiClient {
         } else {
             InputStream ins= dataURL.openStream();
             BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
-            return new HapiClientIterator( info, reader );
+            result= new HapiClientIterator( info, reader );
+            File cache= Paths.get( getHapiCache(), 
+                    dataURL.getProtocol() + "/" + dataURL.getHost() + "/" + dataURL.getPath(), 
+                    id ).toFile();
+            result= new WriteCacheIterator( info, result, startTime, endTime, cache, false );
+            return result;
         }
     }
     
@@ -867,7 +873,12 @@ public class HapiClient {
         } else {
             InputStream ins= dataURL.openStream();
             BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
-            return new HapiClientIterator( info, reader );
+            result= new HapiClientIterator( info, reader );
+            File cache= Paths.get( getHapiCache(), 
+                    dataURL.getProtocol() + "/" + dataURL.getHost() + "/" + dataURL.getPath(), 
+                    id ).toFile();
+            result= new WriteCacheIterator( info, result, startTime, endTime, cache, true );
+            return result;
         }
         
     }
