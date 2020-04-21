@@ -53,7 +53,11 @@ public class TimeUtil {
                 time = String.format("%d-%03dZ", nn[0], nn[2]);
                 break;
             default:
-                c = exampleForm.charAt(10);
+                if ( exampleForm.length()==10 ) {
+                    c= 'Z';
+                } else {
+                    c = exampleForm.charAt(10);
+                }
                 if (c == 'T') {
                     // $Y-$jT
                     time = String.format("%d-%02d-%02dT%02d:%02d:%02d.%09dZ", nn[0], nn[1], nn[2], nn[3], nn[4], nn[5], nn[6]);
