@@ -426,13 +426,13 @@ public class HapiClient {
     
     /**
      * return the catalog as a JSONObject.  For example:
-     * <pre>{@code
+     * <code><pre>
      * jo= getCatalog( URL( "https://jfaden.net/HapiServerDemo/hapi/catalog" ) )
      * print jo.get('HAPI') # "2.0"
      * catalog= jo.getJSONArray( 'catalog' )
      * for i in range(catalog.length()):
      *    print catalog.getJSONObject(i).get('id')
-     * }</pre>
+     * </pre></code>
      * @param server
      * @return 
      * @throws java.io.IOException 
@@ -453,11 +453,11 @@ public class HapiClient {
     
     /**
      * return the catalog as a String array.
-     * <pre>{@code
+     * <code><pre>
      * catalog= getCatalogIdsArray( URL( "https://jfaden.net/HapiServerDemo/hapi/catalog" ) )
      * for s in catalog:
      *    print s
-     * }</pre>
+     * </pre></code>
      * @param server
      * @return
      * @throws IOException
