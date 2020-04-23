@@ -1,0 +1,53 @@
+setScriptTitle('Write Cache Demo')
+setScriptDescription('Demo writing cache')
+
+from org.hapiserver.HapiClient import *
+
+cache= getHapiCache()
+
+from java.io import File
+
+ff= File( cache, 'https/jfaden.net/HapiServerDemo/hapi/data/' )
+print 'rm -r '+str(ff)
+
+def deleteTree(dr):
+    ff= dr.listFiles()
+    if ( ff==None ): return
+    for f in ff:
+        if ( f.isDirectory() ):
+            deleteTree(f)
+        elif ( f.isFile() ):
+            if not f.delete(): print 'unable to delete '+str(f)
+deleteTree(ff)
+
+from org.hapiserver import TimeUtil
+print TimeUtil.ceil('2020-04-21T13:00')
+print TimeUtil.ceil('2020-04-21T00:00')
+print TimeUtil.floor('2020-04-21T13:00')
+print TimeUtil.floor('2020-04-21T00:00')
+print TimeUtil.previousDay('2020-04-21Z')
+print TimeUtil.previousDay('2020-03-01Z')
+print TimeUtil.previousDay('2000-01-01Z')
+print TimeUtil.nextDay('1999-12-31Z')
+print TimeUtil.dayOfYear(2020,4,21)
+
+hapiServer= URL( "https://jfaden.net/HapiServerDemo/hapi/" )
+
+ID= 'Iowa+City+Conditions'
+
+print '--- ' + ID + ' ---'
+parameters= getInfoParametersArray(hapiServer, ID )
+for p in parameters:
+    print p
+
+it= getData( hapiServer, 
+     'Iowa+City+Conditions', 
+     'Temperature,Humidity', 
+     '2019-10-20T00:00', '2019-10-24T05:00' )
+
+print '--- data ---'
+while ( it.hasNext() ):
+    r= it.next()
+    print r.getIsoTime(0), r.getDouble(1), r.getDouble(2)
+    
+# https://jfaden.net/HapiServerDemo/hapi/data?id=Iowa+City+Conditions&start.time=2020-01-01T00:00Z&stop.time=2020-02-01T00:00Z
