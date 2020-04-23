@@ -425,6 +425,24 @@ public class HapiClient {
     }        
     
     /**
+     * concat the functional area knowing that hapi is a directory not a file.
+     * @param server
+     * @param function
+     * @return 
+     */
+    private static URL url( URL server, String function ) {
+        try {
+            if ( server.getFile().endsWith("/") ) {
+                return new URL( server.toString() + function );
+            } else {
+                return new URL( server.toString() + "/" + function );
+            }
+        } catch ( MalformedURLException ex ) {
+            throw new RuntimeException(ex);
+        }
+    }
+    
+    /**
      * return the catalog as a JSONObject.  For example:
      * <code><pre>
      * jo= getCatalog( URL( "https://jfaden.net/HapiServerDemo/hapi/catalog" ) )
@@ -445,7 +463,7 @@ public class HapiClient {
             logger.warning("HAPI network call on event thread");
         }        
         URL url;
-        url= new URL( server, "catalog" );
+        url= url( server, "catalog" );
         String s= readFromURL(url, "json");
         JSONObject o= new JSONObject(s);
         return o;
@@ -489,11 +507,7 @@ public class HapiClient {
             logger.warning("HAPI network call on event thread");
         }        
         URL url;
-        try {
-            url= new URL( server, "info?id="+id );
-        } catch (MalformedURLException ex) {
-            throw new IllegalArgumentException(ex);
-        }
+        url= url( server, "info?id="+id );
         
         String s= readFromURL(url, "json");
         
@@ -516,11 +530,7 @@ public class HapiClient {
             logger.warning("HAPI network call on event thread");
         }        
         URL url;
-        try {
-            url= new URL( server, "info?id="+id + "&parameters="+parameters );
-        } catch (MalformedURLException ex) {
-            throw new IllegalArgumentException(ex);
-        }
+        url= url( server, "info?id="+id + "&parameters="+parameters );
         
         String s= readFromURL(url, "json");
         
@@ -821,7 +831,7 @@ public class HapiClient {
         
         JSONObject info= getInfo( server, id );
 
-        URL dataURL= new URL( server, 
+        URL dataURL= url( server, 
             "data?id="+id 
             + "&time.min="+startTime 
             + "&time.max="+endTime );
@@ -834,7 +844,9 @@ public class HapiClient {
             BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
             result= new HapiClientIterator( info, reader );
             File cache= Paths.get( getHapiCache(), 
-                    dataURL.getProtocol() + "/" + dataURL.getHost() + "/" + dataURL.getPath(), 
+                    dataURL.getProtocol(),
+                    dataURL.getHost(),
+                    dataURL.getPath(), 
                     id ).toFile();
             result= new WriteCacheIterator( info, result, startTime, endTime, cache, false );
             return result;
@@ -861,7 +873,7 @@ public class HapiClient {
         
         JSONObject info= getInfo( server, id, parameters );
 
-        URL dataURL= new URL( server, 
+        URL dataURL= url( server, 
                 "data?id="+id 
                 + "&parameters="+parameters 
                 + "&time.min="+startTime 
@@ -875,7 +887,9 @@ public class HapiClient {
             BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
             result= new HapiClientIterator( info, reader );
             File cache= Paths.get( getHapiCache(), 
-                    dataURL.getProtocol() + "/" + dataURL.getHost() + "/" + dataURL.getPath(), 
+                    dataURL.getProtocol(), 
+                    dataURL.getHost(), 
+                    dataURL.getPath(), 
                     id ).toFile();
             result= new WriteCacheIterator( info, result, startTime, endTime, cache, true );
             return result;
