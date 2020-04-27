@@ -21,10 +21,10 @@ public class HapiClientIterator implements Iterator<HapiRecord> {
     
     /**
      * create an iterator for the CSV stream.
-     * @param info
-     * @param reader
-     * @throws IOException 
-     * @throws org.json.JSONException 
+     * @param info the info describing the fields.
+     * @param reader buffered reader providing each parseable line.
+     * @throws IOException when there is an issue reading the data.
+     * @throws org.json.JSONException when the JSON is mis-formatted.
      */
     public HapiClientIterator(JSONObject info, BufferedReader reader) throws IOException, JSONException {
         this.info= info;

@@ -8,7 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * concatenates multiple readers so that they appear as one reader.
+ * concatenates multiple readers so that they appear as one reader.  All
+ * of the first reader's content is read before the second reader's is
+ * begun.
  * @author jbf
  */
 public class ConcatenateBufferedReader implements AbstractLineReader {
@@ -24,7 +26,7 @@ public class ConcatenateBufferedReader implements AbstractLineReader {
     /**
      * add the reader to the readers, so that this reader will be used after the
      * others are used.
-     * @param r 
+     * @param r the reader to add
      */    
     public void concatenateBufferedReader( AbstractLineReader r ) {
         readers.add(r);

@@ -13,7 +13,7 @@ import java.util.Date;
  * <li>2020-04-21Z
  * <li>2020-04-21T12:20Z
  * <li>2020-04-21T23:45:67.000000001Z  (nanosecond limit)
- * <li>2020-112Z (day-of-year instead of $Y-$m-$d
+ * <li>2020-112Z (day-of-year instead of $Y-$m-$d)
  * <li>2020-112T23:45:67.000000001 (note Z is assumed)
  * </ul>
  * @author jbf
@@ -33,9 +33,9 @@ public class TimeUtil {
      * both $Y-$m-$d, then we need not break apart and recombine the time 
      * (isoTimeToArray call can be avoided).
      * 
-     * @param exampleForm
-     * @param time
-     * @return 
+     * @param exampleForm isoTime string.
+     * @param time the time in any allowed isoTime format
+     * @return same time but in the same form as exampleForm.
      */
     public static String reformatIsoTime(String exampleForm, String time) {
         char c = exampleForm.charAt(8);
@@ -88,7 +88,8 @@ public class TimeUtil {
     };
     
     /**
-     *
+     * count off the days between startTime and stopTime, but not including
+     * stopTime.
      * @param startTime an iso time string
      * @param stopTime an iso time string
      * @return array of times, complete days, in the form $Y-$m-$d
@@ -116,7 +117,7 @@ public class TimeUtil {
 
     /**
      * return the next day boundary.  Note hours, minutes, seconds and nanoseconds are ignored.
-     * @param day isoTime string
+     * @param day any isoTime format string.
      * @return the next day in $Y-$m-$dZ
      * @see #ceil(java.lang.String) 
      * @see #previousDay(java.lang.String) 
@@ -130,7 +131,7 @@ public class TimeUtil {
 
     /**
      * return the previous day boundary.  Note hours, minutes, seconds and nanoseconds are ignored.
-     * @param day isoTime string
+     * @param day any isoTime format string.
      * @return the next day in $Y-$m-$dZ
      * @see #floor(java.lang.String) 
      * @see #nextDay(java.lang.String) 
@@ -145,36 +146,36 @@ public class TimeUtil {
     /**
      * return the $Y-$m-$dT00:00:00.000000000Z of the next boundary, or
      * the same value (normalized) if we are already at a boundary.
-     * @param day
+     * @param time any isoTime format string.
      * @return the next midnight or the value if already at midnight.
      */
-    public static String ceil(String day) {
-        day = normalizeTimeString(day);
-        if (day.substring(11).equals("00:00:00.000000000Z")) {
-            return day;
+    public static String ceil(String time) {
+        time = normalizeTimeString(time);
+        if (time.substring(11).equals("00:00:00.000000000Z")) {
+            return time;
         } else {
-            return nextDay(day.substring(0, 11)).substring(0, 10) + "T00:00:00.000000000Z";
+            return nextDay(time.substring(0, 11)).substring(0, 10) + "T00:00:00.000000000Z";
         }
     }
 
     /**
      * return the $Y-$m-$dT00:00:00.000000000Z of the next boundary, or
      * the same value (normalized) if we are already at a boundary.
-     * @param day
-     * @return the next midnight or the value if already at midnight.
+     * @param time any isoTime format string.
+     * @return the previous midnight or the value if already at midnight.
      */
-    public static String floor(String day) {
-        day = normalizeTimeString(day);
-        if (day.substring(11).equals("00:00:00.000000000Z")) {
-            return day;
+    public static String floor(String time) {
+        time = normalizeTimeString(time);
+        if (time.substring(11).equals("00:00:00.000000000Z")) {
+            return time;
         } else {
-            return day.substring(0, 10) + "T00:00:00.000000000Z";
+            return time.substring(0, 10) + "T00:00:00.000000000Z";
         }
     }
     
     /**
      * return $Y-$m-$dT$H:$M:$S.$(subsec,places=9)Z
-     * @param time any ISO8601 string.
+     * @param time any isoTime format string.
      * @return the time in standard form.
      */
     public static String normalizeTimeString(String time) {
@@ -288,8 +289,9 @@ public class TimeUtil {
      * print x % 86400000   # and no milliseconds
      * }
      * </pre>
-     * @param time
+     * @param time the isoTime, which is parsed using DateTimeFormatter.ISO_INSTANT.parse.
      * @return number of non-leap-second milliseconds since 1970-01-01T00:00Z.
+     * @see DateTimeFormatter#parse 
      */
     public static long toMillisecondsSince1970(String time) {
         TemporalAccessor ta = DateTimeFormatter.ISO_INSTANT.parse(time);

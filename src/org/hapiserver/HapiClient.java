@@ -56,7 +56,7 @@ public class HapiClient {
     
     /**
      * use cache of HAPI responses, to allow for use in offline mode.
-     * @return 
+     * @return true if the cache can be used.
      */
     protected static boolean useCache() {
         return ( "true".equals( System.getProperty("hapiServerCache","false") ) );
@@ -64,16 +64,24 @@ public class HapiClient {
     
     /**
      * allow cached files to be used for no more than 1 hour.
-     * @return 
+     * @return the number of milliseconds a cached resource should be used.
      */
     protected static long cacheAgeLimitMillis() {
         return 3600000;
     }
     
+    /**
+     * number of milliseconds before assuming a web connection is not available.
+     * @return number of milliseconds before assuming a web connection is not available.
+     */
     protected static int getConnectTimeoutMs() {
         return 5000;
     }
 
+    /**
+     * number of milliseconds allowed during a download.
+     * @return number of milliseconds before assuming a web connection is not available.
+     */    
     protected static int getReadTimeoutMs() {
         return 5000;
     }
@@ -81,8 +89,8 @@ public class HapiClient {
     private static boolean offline= false;
 
     /**
-     * return true if no web interactions, just use previously downloaded data.
-     * @return 
+     * return true if there should be no web interactions, and only previously downloaded data should be used.
+     * @return true if there should be no web interactions
      */
     public static boolean isOffline() {
         return offline;
@@ -90,7 +98,7 @@ public class HapiClient {
 
     /**
      * true if no web interactions, just use previously downloaded data.
-     * @param offline 
+     * @param offline true if there should be no web interactions.
      */
     public static void setOffline( boolean offline ) {
         HapiClient.offline= offline;
@@ -137,7 +145,7 @@ public class HapiClient {
      * read the file into a string.  
      * @param f non-empty file
      * @return String containing file contents.
-     * @throws IOException 
+     * @throws IOException if there is an issue reading the file.
      */
     public static String readFromFile( File f ) throws IOException {
         StringBuilder builder= new StringBuilder();
@@ -159,10 +167,10 @@ public class HapiClient {
         
     /**
      * return the resource, if cached, or null if the data is not cached.
-     * @param url
+     * @param url the URL to read from the cache, with query parameters like "id".
      * @param type "json" (the extension) or "" for no additional extension.
      * @return the data or null.
-     * @throws IOException 
+     * @throws IOException if there is an issue reading data from the file cache.
      */
     public static String readFromCachedURL( URL url, String type ) throws IOException {
         
@@ -206,7 +214,7 @@ public class HapiClient {
      *    but others are ignored.
      * @param type "json" (the extension), or "" if no extension should be added.
      * @param data the data.
-     * @throws IOException 
+     * @throws IOException if there is an issue writing data to the file cache.
      */
     public static void writeToCachedURL( URL url, String type, String data ) 
             throws IOException {
@@ -262,7 +270,7 @@ public class HapiClient {
      * @param url the URL to read from
      * @param type the extension to use for the cache file (JSON, bin, txt).
      * @return non-empty string
-     * @throws IOException 
+     * @throws IOException if there is an issue reading data to the file cache.
      */
     public static String readFromURL( URL url, String type ) 
             throws IOException {
@@ -426,9 +434,9 @@ public class HapiClient {
     
     /**
      * concat the functional area knowing that hapi is a directory not a file.
-     * @param server
-     * @param function
-     * @return 
+     * @param server the base URL, for example URL('https://cdaweb.gsfc.nasa.gov/hapi')
+     * @param function the function to append, for example "info"
+     * @return the URL properly built.
      */
     private static URL url( URL server, String function ) {
         try {
@@ -444,17 +452,19 @@ public class HapiClient {
     
     /**
      * return the catalog as a JSONObject.  For example:
-     * <code><pre>
+     * <pre>
+     * {@code
      * jo= getCatalog( URL( "https://jfaden.net/HapiServerDemo/hapi/catalog" ) )
      * print jo.get('HAPI') # "2.0"
      * catalog= jo.getJSONArray( 'catalog' )
      * for i in range(catalog.length()):
      *    print catalog.getJSONObject(i).get('id')
-     * </pre></code>
-     * @param server
-     * @return 
-     * @throws java.io.IOException 
-     * @throws org.json.JSONException 
+     * }
+     * </pre>
+     * @param server the server URL, ending with "hapi".
+     * @return the catalog as a JSON response.
+     * @throws java.io.IOException IOException when there is an issue reading the data.
+     * @throws org.json.JSONException should the server return an invalid response
      * @see #getCatalogIdsArray
      */
     public static org.json.JSONObject getCatalog( URL server ) 
@@ -471,15 +481,17 @@ public class HapiClient {
     
     /**
      * return the catalog as a String array.
-     * <code><pre>
+     * <pre>
+     * {@code
      * catalog= getCatalogIdsArray( URL( "https://jfaden.net/HapiServerDemo/hapi/catalog" ) )
      * for s in catalog:
      *    print s
-     * </pre></code>
-     * @param server
-     * @return
-     * @throws IOException
-     * @throws JSONException 
+     * }
+     * </pre>
+     * @param server the server URL, ending with "hapi".
+     * @return the dataset ids for the server.
+     * @throws java.io.IOException IOException when there is an issue reading the data.
+     * @throws org.json.JSONException should the server return an invalid response
      */
     public static String[] getCatalogIdsArray( URL server ) 
             throws IOException, JSONException {
@@ -495,11 +507,11 @@ public class HapiClient {
     
     /**
      * get the info for the id
-     * @param server
+     * @param server the server URL, ending with "hapi".
      * @param id HAPI dataset identifier, matching [a-zA-Z_]+[a-zA-Z0-9_/]*
      * @return the JSON for info
-     * @throws java.io.IOException 
-     * @throws org.json.JSONException 
+     * @throws java.io.IOException IOException when there is an issue reading the data.
+     * @throws org.json.JSONException should the server return an invalid response
      */
     public static org.json.JSONObject getInfo( URL server, String id ) 
             throws IOException, JSONException {
@@ -517,12 +529,12 @@ public class HapiClient {
     
     /**
      * get the info for the id, for a subset of the parameters.
-     * @param server
+     * @param server the server URL, ending with "hapi".
      * @param id HAPI dataset identifier, matching [a-zA-Z_]+[a-zA-Z0-9_/]*
      * @param parameters comma-separated list of parameter names.
      * @return the JSON for info
-     * @throws java.io.IOException 
-     * @throws org.json.JSONException 
+     * @throws java.io.IOException IOException when there is an issue reading the data.
+     * @throws org.json.JSONException should the server return an invalid response
      */
     public static JSONObject getInfo(URL server, String id, String parameters) 
             throws IOException, JSONException {
@@ -560,11 +572,11 @@ public class HapiClient {
     
     /**
      * return a list of the parameters for the id, as a String array.
-     * @param server
-     * @param id
-     * @return
-     * @throws IOException
-     * @throws JSONException 
+     * @param server the server URL, ending with "hapi".
+     * @param id the dataset id.
+     * @return the parameters identifying each column of the dataset.
+     * @throws java.io.IOException IOException when there is an issue reading the data.
+     * @throws org.json.JSONException should the server return an invalid response
      * @see #getInfo(java.net.URL, java.lang.String) 
      */
     public static String[] getInfoParametersArray( URL server, String id ) 
@@ -815,12 +827,12 @@ public class HapiClient {
     
     /**
      * return the data record-by-record, using the CSV response.
-     * @param server
-     * @param id
-     * @param startTime
-     * @param endTime
+     * @param server the server URL, ending with "hapi".
+     * @param id the dataset id to read.
+     * @param startTime the start time, in isoTime.
+     * @param endTime the end time, in isoTime.
      * @return Iterator, which will return records until the stream is empty.
-     * @throws java.io.IOException  
+     * @throws IOException when there is an issue reading the data.
      * @throws org.json.JSONException should the server return an invalid response.
      */
     public static Iterator<HapiRecord> getDataCSV( 
@@ -855,13 +867,13 @@ public class HapiClient {
     
     /**
      * return the data record-by-record, using the CSV response.
-     * @param server
-     * @param id
-     * @param parameters
-     * @param startTime
-     * @param endTime
+     * @param server the server URL, ending with "hapi".
+     * @param id the dataset id to read.
+     * @param parameters the parameters, comma separated to read.
+     * @param startTime the start time, in isoTime.
+     * @param endTime the end time, in isoTime.
      * @return Iterator, which will return records until the stream is empty.
-     * @throws java.io.IOException  
+     * @throws IOException when there is an issue reading the data.
      * @throws org.json.JSONException should the server return an invalid response.
      */
     public static Iterator<HapiRecord> getDataCSV( 
@@ -904,7 +916,7 @@ public class HapiClient {
      * @param startTime the start time
      * @param endTime the end time
      * @return the records in an iterator
-     * @throws java.io.IOException
+     * @throws java.io.IOException IOException when there is an issue reading the data.
      * @throws org.json.JSONException should the server return an invalid response
      */
     public static Iterator<HapiRecord> getData( 
@@ -925,8 +937,8 @@ public class HapiClient {
      * @param startTime the start time
      * @param endTime the end time
      * @return the records in an iterator
-     * @throws java.io.IOException
-     * @throws org.json.JSONException should the server return an invalid response
+     * @throws IOException when there is an issue reading the data.
+     * @throws org.json.JSONException when the JSON is mis-formatted.
      */
     public static Iterator<HapiRecord> getData( 
             URL server, 
