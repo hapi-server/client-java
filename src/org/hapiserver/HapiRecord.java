@@ -5,6 +5,7 @@ package org.hapiserver;
  * Interface for conveying a single HAPI record, regardless of its source
  * (binary, csv, etc).
  * @author jbf
+ * TODO: Python client allows access by name, should probably consider this as well.
  */
 public interface HapiRecord {
 
