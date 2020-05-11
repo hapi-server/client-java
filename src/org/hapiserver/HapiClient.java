@@ -534,7 +534,7 @@ public class HapiClient {
         JSONObject o= new JSONObject(s);
         
         JSONObject status= o.getJSONObject("status");
-        if ( status.getInt("code")!=200 ) {
+        if ( status.getInt("code")!=1200 ) {
             throw new HapiException(status);
         }
                 
@@ -563,7 +563,7 @@ public class HapiClient {
         JSONObject o= new JSONObject(s);
         
         JSONObject status= o.getJSONObject("status");
-        if ( status.getInt("code")!=200 ) {
+        if ( status.getInt("code")!=1200 ) {
             throw new HapiException(status);
         }
         
