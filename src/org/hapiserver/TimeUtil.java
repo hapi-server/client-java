@@ -294,6 +294,7 @@ public class TimeUtil {
      * @see DateTimeFormatter#parse 
      */
     public static long toMillisecondsSince1970(String time) {
+        time= normalizeTimeString(time);
         TemporalAccessor ta = DateTimeFormatter.ISO_INSTANT.parse(time);
         Instant i = Instant.from(ta);
         Date d = Date.from(i);
