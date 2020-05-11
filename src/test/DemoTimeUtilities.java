@@ -61,6 +61,18 @@ public class DemoTimeUtilities {
         
     }
     
+    public static void demoIsoTimeToArray() {
+        System.err.println("\n# demoIsoToTimeArray");
+        int[] arr= TimeUtil.isoTimeToArray("2001-02-03T04:05:06:000000007");
+        System.err.println("year: "+arr[0]);
+        System.err.println("month: "+arr[1]);
+        System.err.println("day: "+arr[2]);
+        System.err.println("hour: "+arr[3]);
+        System.err.println("minute: "+arr[4]);
+        System.err.println("second: "+arr[5]);
+        System.err.println("nanoseconds: "+arr[6]);
+    }
+    
     public static void main( String[] args ) {
         demoCountOffDays();
         demoReformatTime();
@@ -68,6 +80,8 @@ public class DemoTimeUtilities {
         demoFloorCeil();
         demoNextPrevDay();
         demoToMillisecondsSince1970();
-        
+        demoIsoTimeToArray();
     }
+
+
 }
