@@ -103,7 +103,7 @@ public class WriteCacheIterator implements Iterator<HapiRecord> {
      * @return the file
      */
     private static File getCacheFile( File cacheRoot, String currentTag, String name ) {
-        String dirWithinCache= currentTag.substring(0,4)+"/"+currentTag.substring(5,7);
+        String dirWithinCache= currentTag.substring(0,4)+"/"+currentTag.substring(4,6);
         File dir= new File(cacheRoot,dirWithinCache);
         if ( name.length()>0 ) {
             return new File( dir, currentTag + "." + name + ".csv" );
