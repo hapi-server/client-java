@@ -21,6 +21,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.locks.Lock;
@@ -59,7 +60,7 @@ public class HapiClient {
      * @return true if the cache can be used.
      */
     protected static boolean useCache() {
-        return ( "true".equals( System.getProperty("hapiServerCache","false") ) );
+        return ( "true".equals( System.getProperty("hapiServerCache","true") ) );
     }
     
     /**
@@ -278,7 +279,9 @@ public class HapiClient {
         if ( isOffline() ) {
             String s= readFromCachedURL( url, type );
             if ( s!=null ) return s;
+            throw new IOException("cache is missing "+url);
         }
+        
         logger.log(Level.FINE, "GET {0}", new Object[] { url } );
         URLConnection urlc= url.openConnection();
         urlc.setConnectTimeout( getConnectTimeoutMs() );
@@ -871,16 +874,25 @@ public class HapiClient {
         Iterator<HapiRecord> result= checkCache( info, dataURL, id, startTime, endTime );
         if ( result!=null ) {
             return result;
-        } else {
+        } else {            
+            if ( isOffline() ) {
+                logger.fine("cache contains no data");
+                return Collections.emptyIterator();
+            }
+
             InputStream ins= dataURL.openStream();
             BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
             result= new HapiClientIterator( info, reader );
-            File cache= Paths.get( getHapiCache(), 
-                    dataURL.getProtocol(),
-                    dataURL.getHost(),
-                    dataURL.getPath(), 
-                    id ).toFile();
-            result= new WriteCacheIterator( info, result, startTime, endTime, cache, false );
+            
+            if ( useCache() ) {
+                File cache= Paths.get( getHapiCache(), 
+                        dataURL.getProtocol(),
+                        dataURL.getHost(),
+                        dataURL.getPath(), 
+                        id ).toFile();
+                result= new WriteCacheIterator( info, result, startTime, endTime, cache, false );
+            }
+            
             return result;
         }
     }
@@ -915,15 +927,23 @@ public class HapiClient {
         if ( result!=null ) {
             return result;
         } else {
+            if ( isOffline() ) {
+                logger.fine("cache contains no data");
+                return Collections.emptyIterator();
+            }
             InputStream ins= dataURL.openStream();
             BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
             result= new HapiClientIterator( info, reader );
-            File cache= Paths.get( getHapiCache(), 
-                    dataURL.getProtocol(), 
-                    dataURL.getHost(), 
-                    dataURL.getPath(), 
-                    id ).toFile();
-            result= new WriteCacheIterator( info, result, startTime, endTime, cache, true );
+            
+            if ( useCache() ) {
+                File cache= Paths.get( getHapiCache(), 
+                        dataURL.getProtocol(), 
+                        dataURL.getHost(), 
+                        dataURL.getPath(), 
+                        id ).toFile();
+                result= new WriteCacheIterator( info, result, startTime, endTime, cache, true );
+            }
+            
             return result;
         }
         
