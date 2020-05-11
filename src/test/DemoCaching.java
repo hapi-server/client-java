@@ -11,7 +11,7 @@ import org.hapiserver.HapiRecord;
 import org.json.JSONException;
 
 /**
- * Demo a more realistic use of the library.
+ * Demo how cache is built and used by the library when it is offline.
  * @author jbf
  */
 public class DemoCaching {
