@@ -532,6 +532,12 @@ public class HapiClient {
         String s= readFromURL(url, "json");
         
         JSONObject o= new JSONObject(s);
+        
+        JSONObject status= o.getJSONObject("status");
+        if ( status.getInt("code")!=200 ) {
+            throw new HapiException(status);
+        }
+                
         return o;
     }
     
@@ -555,6 +561,12 @@ public class HapiClient {
         String s= readFromURL(url, "json");
         
         JSONObject o= new JSONObject(s);
+        
+        JSONObject status= o.getJSONObject("status");
+        if ( status.getInt("code")!=200 ) {
+            throw new HapiException(status);
+        }
+        
         String[] ss= parameters.split(",",-2);
         
         JSONArray joa= o.getJSONArray("parameters");
