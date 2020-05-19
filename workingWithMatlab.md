@@ -45,7 +45,6 @@ Now let's get some data.
 ~~~~~
 >> js= hc.getData(URL,'poolTemperature', '2020-04-23T00:00Z', '2020-04-24T00:00Z')
 >> while ( js.hasNext() ) 
-      rec= js.next();
-      print rec
+      js.next()
 end
 ~~~~~
