@@ -5,7 +5,6 @@ package org.hapiserver;
  * Interface for conveying a single HAPI record, regardless of its source
  * (binary, csv, etc).
  * @author jbf
- * TODO: Python client allows access by name, should probably consider this as well.
  */
 public interface HapiRecord {
 
@@ -53,7 +52,7 @@ public interface HapiRecord {
      * @return the string value.
      */
     String getAsString( int i );
-        
+
     /**
      * return the number of items.
      * @return the number of items.
