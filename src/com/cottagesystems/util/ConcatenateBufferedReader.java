@@ -56,17 +56,17 @@ public class ConcatenateBufferedReader implements AbstractLineReader {
         // nothing needs to be done.
     }
 
-    public static void main( String[] args ) throws IOException {
-        StringReader r1= new StringReader("a\nb\nc\n");
-        StringReader r2= new StringReader("x\ny\nz\n");
-        ConcatenateBufferedReader r= new ConcatenateBufferedReader();
-        r.concatenateBufferedReader( new SingleFileBufferedReader(new BufferedReader(r1) ) );
-        r.concatenateBufferedReader( new SingleFileBufferedReader(new BufferedReader(r2) ) );
-        
-        String s= r.readLine();
-        while ( s!=null ) {
-            System.err.println(s);
-            s= r.readLine();
-        }
-    }    
+//    public static void main( String[] args ) throws IOException {
+//        StringReader r1= new StringReader("a\nb\nc\n");
+//        StringReader r2= new StringReader("x\ny\nz\n");
+//        ConcatenateBufferedReader r= new ConcatenateBufferedReader();
+//        r.concatenateBufferedReader( new SingleFileBufferedReader(new BufferedReader(r1) ) );
+//        r.concatenateBufferedReader( new SingleFileBufferedReader(new BufferedReader(r2) ) );
+//        
+//        String s= r.readLine();
+//        while ( s!=null ) {
+//            System.err.println(s);
+//            s= r.readLine();
+//        }
+//    }    
 }
