@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
-import static org.hapiserver.HapiClient.*;
+import org.hapiserver.HapiClient;
 import org.hapiserver.HapiRecord;
 import org.hapiserver.TimeUtil;
 import org.json.JSONException;
@@ -19,7 +19,7 @@ public class DemoCdawebRead {
     public static void main( String[] args ) throws MalformedURLException, IOException, JSONException {
         URL hapiServer=new URL("https://cdaweb.gsfc.nasa.gov/hapi");
         
-        Iterator<HapiRecord> it= getData( hapiServer,
+        Iterator<HapiRecord> it= new HapiClient().getData( hapiServer,
                 "MMS4_EPD-EIS_SRVY_L2_ELECTRONENERGY",
                 "mms4_epd_eis_electronenergy_electron_P4_flux_t5",
                 "2020-02-03T00Z",

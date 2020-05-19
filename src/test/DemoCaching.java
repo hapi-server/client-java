@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
-import static org.hapiserver.HapiClient.*;
+import org.hapiserver.HapiClient;
 import org.hapiserver.HapiRecord;
 import org.json.JSONException;
 
@@ -35,14 +35,14 @@ public class DemoCaching {
     }
     
     private static void clearCache( ) {
-        String cache= getHapiCache();
+        String cache= new HapiClient().getHapiCache();
         File f= new File( cache, "https/jfaden.net/HapiServerDemo/hapi/data/" );
         int fileCount= deleteTree(f);
         System.out.println("clear cache deletes "+fileCount+ " files.");
     }
     
     public static void main( String[] args ) throws MalformedURLException, IOException, JSONException {
-        
+        HapiClient hapiClient= new HapiClient();
         URL hapiServer=new URL("https://jfaden.net/HapiServerDemo/hapi/");
         
         clearCache();
@@ -51,7 +51,7 @@ public class DemoCaching {
 
         System.out.println("--- "+ID+" ---");
         
-        Iterator<HapiRecord> it= getData(hapiServer,
+        Iterator<HapiRecord> it= hapiClient.getData(hapiServer,
             "Iowa+City+Conditions",
             "Temperature,Humidity",
             "2019-10-20T00:00","2019-10-24T05:00" );
@@ -62,9 +62,9 @@ public class DemoCaching {
         }
         
         System.out.println("# Demo that we can read data from cache, even though we are offline.");
-        setOffline(true);
+        new HapiClient().setOffline(true);
         
-        it= getData(hapiServer,
+        it= hapiClient.getData(hapiServer,
             "Iowa+City+Conditions",
             "Temperature,Humidity",
             "2019-10-20T23:30","2019-10-21T00:30" );
@@ -78,7 +78,7 @@ public class DemoCaching {
         
         clearCache();
 
-        it= getData(hapiServer,
+        it= hapiClient.getData(hapiServer,
             "Iowa+City+Conditions",
             "Temperature,Humidity",
             "2019-10-20T23:30","2019-10-21T00:30" );

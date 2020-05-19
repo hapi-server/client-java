@@ -19,9 +19,9 @@ import org.json.JSONException;
  */
 public class HapiClientTests {
     public static void main( String[] args ) throws MalformedURLException, IOException, JSONException {
-        HapiClient.getCatalog(new URL("https://jfaden.net/HapiServerDemo/hapi") );
+        new HapiClient().getCatalog(new URL("https://jfaden.net/HapiServerDemo/hapi") );
         URL u= new URL("https://jfaden.net/HapiServerDemo/hapi/");
-        Iterator<HapiRecord> js=HapiClient.getData( u, "poolTemperature", "2020-04-23T00:00Z", "2020-04-24T00:00Z");
+        Iterator<HapiRecord> js= new HapiClient().getData( u, "poolTemperature", "2020-04-23T00:00Z", "2020-04-24T00:00Z");
         while ( js.hasNext() ) {
             HapiRecord rec= js.next();
             System.out.println( String.format( "%s %9.2f", rec.getIsoTime(0), rec.getDouble(1) ) );

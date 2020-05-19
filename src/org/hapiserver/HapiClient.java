@@ -51,15 +51,15 @@ public class HapiClient {
     
     private static final Lock LOCK= new ReentrantLock();
 
-    private HapiClient() {
-        // this class is not instanciated.
+    public HapiClient() {
+        
     }
     
     /**
      * use cache of HAPI responses, to allow for use in offline mode.
      * @return true if the cache can be used.
      */
-    protected static boolean useCache() {
+    protected boolean useCache() {
         return ( "true".equals( System.getProperty("hapiServerCache","true") ) );
     }
     
@@ -67,7 +67,7 @@ public class HapiClient {
      * allow cached files to be used for no more than 1 hour.
      * @return the number of milliseconds a cached resource should be used.
      */
-    protected static long cacheAgeLimitMillis() {
+    protected long cacheAgeLimitMillis() {
         return 3600000;
     }
     
@@ -75,7 +75,7 @@ public class HapiClient {
      * number of milliseconds before assuming a web connection is not available.
      * @return number of milliseconds before assuming a web connection is not available.
      */
-    protected static int getConnectTimeoutMs() {
+    protected int getConnectTimeoutMs() {
         return 5000;
     }
 
@@ -83,17 +83,17 @@ public class HapiClient {
      * number of milliseconds allowed during a download.
      * @return number of milliseconds before assuming a web connection is not available.
      */    
-    protected static int getReadTimeoutMs() {
+    protected int getReadTimeoutMs() {
         return 5000;
     }
     
-    private static boolean offline= false;
+    private boolean offline= false;
 
     /**
      * return true if there should be no web interactions, and only previously downloaded data should be used.
      * @return true if there should be no web interactions
      */
-    public static boolean isOffline() {
+    public boolean isOffline() {
         return offline;
     }
 
@@ -101,8 +101,8 @@ public class HapiClient {
      * true if no web interactions, just use previously downloaded data.
      * @param offline true if there should be no web interactions.
      */
-    public static void setOffline( boolean offline ) {
-        HapiClient.offline= offline;
+    public void setOffline( boolean offline ) {
+        this.offline= offline;
     }
     
     /**
@@ -110,7 +110,7 @@ public class HapiClient {
      * a slash.
      * @return the local folder of the cache for HAPI data.
      */
-    public static String getHapiCache() {
+    public String getHapiCache() {
         String hapiCache= System.getProperty("HAPI_DATA");
         if ( hapiCache!=null ) {
             String home=System.getProperty("user.home") ;
@@ -148,7 +148,7 @@ public class HapiClient {
      * @return String containing file contents.
      * @throws IOException if there is an issue reading the file.
      */
-    public static String readFromFile( File f ) throws IOException {
+    public String readFromFile( File f ) throws IOException {
         StringBuilder builder= new StringBuilder();
         try ( BufferedReader in= new BufferedReader( 
                 new InputStreamReader( new FileInputStream(f) ) ) ) {
@@ -173,7 +173,7 @@ public class HapiClient {
      * @return the data or null.
      * @throws IOException if there is an issue reading data from the file cache.
      */
-    public static String readFromCachedURL( URL url, String type ) throws IOException {
+    public String readFromCachedURL( URL url, String type ) throws IOException {
         
         String hapiCache= getHapiCache();
         
@@ -217,7 +217,7 @@ public class HapiClient {
      * @param data the data.
      * @throws IOException if there is an issue writing data to the file cache.
      */
-    public static void writeToCachedURL( URL url, String type, String data ) 
+    public void writeToCachedURL( URL url, String type, String data ) 
             throws IOException {
         
         String hapiCache= getHapiCache();
@@ -273,7 +273,7 @@ public class HapiClient {
      * @return non-empty string
      * @throws IOException if there is an issue reading data to the file cache.
      */
-    public static String readFromURL( URL url, String type ) 
+    public String readFromURL( URL url, String type ) 
             throws IOException {
         
         if ( isOffline() ) {
@@ -353,7 +353,7 @@ public class HapiClient {
         return result;
     }
     
-    private static Iterator<HapiRecord> calculateCsvCacheReader( 
+    private Iterator<HapiRecord> calculateCsvCacheReader( 
             JSONObject info, File[][] filess) throws IOException, JSONException {
         
         if ( info.getJSONArray("parameters").length()!=filess[0].length ) {
@@ -402,7 +402,7 @@ public class HapiClient {
      * @return
      * @throws IOException 
      */
-    private static Iterator<HapiRecord> maybeGetDataFromCache(
+    private Iterator<HapiRecord> maybeGetDataFromCache(
             JSONObject info,
             URL url, 
             File[][] files, 
@@ -444,7 +444,8 @@ public class HapiClient {
     }        
     
     /**
-     * concat the functional area knowing that hapi is a directory not a file.
+     * concatenate the functional like "info" or "catalog" area knowing that "hapi" is a 
+     * directory not a file.
      * @param server the base URL, for example URL('https://cdaweb.gsfc.nasa.gov/hapi')
      * @param function the function to append, for example "info"
      * @return the URL properly built.
@@ -478,7 +479,7 @@ public class HapiClient {
      * @throws org.json.JSONException should the server return an invalid response
      * @see #getCatalogIdsArray
      */
-    public static org.json.JSONObject getCatalog( URL server ) 
+    public org.json.JSONObject getCatalog( URL server ) 
             throws IOException, JSONException {
         if ( EventQueue.isDispatchThread() ) {
             logger.warning("HAPI network call on event thread");
@@ -504,7 +505,7 @@ public class HapiClient {
      * @throws java.io.IOException IOException when there is an issue reading the data.
      * @throws org.json.JSONException should the server return an invalid response
      */
-    public static String[] getCatalogIdsArray( URL server ) 
+    public String[] getCatalogIdsArray( URL server ) 
             throws IOException, JSONException {
         JSONObject jo= getCatalog(server);
         JSONArray joa= jo.getJSONArray("catalog");
@@ -524,7 +525,7 @@ public class HapiClient {
      * @throws java.io.IOException IOException when there is an issue reading the data.
      * @throws org.json.JSONException should the server return an invalid response
      */
-    public static org.json.JSONObject getInfo( URL server, String id ) 
+    public org.json.JSONObject getInfo( URL server, String id ) 
             throws IOException, JSONException {
         if ( EventQueue.isDispatchThread() ) {
             logger.warning("HAPI network call on event thread");
@@ -553,7 +554,7 @@ public class HapiClient {
      * @throws java.io.IOException IOException when there is an issue reading the data.
      * @throws org.json.JSONException should the server return an invalid response
      */
-    public static JSONObject getInfo(URL server, String id, String parameters) 
+    public JSONObject getInfo(URL server, String id, String parameters) 
             throws IOException, JSONException {
         if ( EventQueue.isDispatchThread() ) {
             logger.warning("HAPI network call on event thread");
@@ -602,7 +603,7 @@ public class HapiClient {
      * @throws org.json.JSONException should the server return an invalid response
      * @see #getInfo(java.net.URL, java.lang.String) 
      */
-    public static String[] getInfoParametersArray( URL server, String id ) 
+    public String[] getInfoParametersArray( URL server, String id ) 
             throws IOException, JSONException {
         JSONObject jo= getInfo(server, id);
         JSONArray joa= jo.getJSONArray("parameters");
@@ -634,7 +635,7 @@ public class HapiClient {
 //        }
 //    }
 
-    private static long getEarliestTimeStamp( File[][] files ) {
+    private long getEarliestTimeStamp( File[][] files ) {
         // digest all this into a single timestamp.  
         // For each day, what is the oldest any of the granules was created?
         // For each interval, what was the oldest of any granule?
@@ -661,7 +662,7 @@ public class HapiClient {
      * @throws IOException
      * @throws IllegalArgumentException 
      */
-    private static boolean getCacheFilesWithTime( 
+    private boolean getCacheFilesWithTime( 
             String[] trs, 
             String id,
             String[] parameters, 
@@ -746,7 +747,7 @@ public class HapiClient {
      * @throws IOException
      * @throws JSONException 
      */
-    private static Iterator<HapiRecord> checkCache( 
+    private Iterator<HapiRecord> checkCache( 
             JSONObject info,
             URL url, 
             String id, 
@@ -858,7 +859,7 @@ public class HapiClient {
      * @throws IOException when there is an issue reading the data.
      * @throws org.json.JSONException should the server return an invalid response.
      */
-    public static Iterator<HapiRecord> getDataCSV( 
+    public Iterator<HapiRecord> getDataCSV( 
             URL server, 
             String id, 
             String startTime,
@@ -908,7 +909,7 @@ public class HapiClient {
      * @throws IOException when there is an issue reading the data.
      * @throws org.json.JSONException should the server return an invalid response.
      */
-    public static Iterator<HapiRecord> getDataCSV( 
+    public Iterator<HapiRecord> getDataCSV( 
             URL server, 
             String id, 
             String parameters,
@@ -959,7 +960,7 @@ public class HapiClient {
      * @throws java.io.IOException IOException when there is an issue reading the data.
      * @throws org.json.JSONException should the server return an invalid response
      */
-    public static Iterator<HapiRecord> getData( 
+    public Iterator<HapiRecord> getData( 
             URL server, 
             String id, 
             String startTime,
@@ -980,7 +981,7 @@ public class HapiClient {
      * @throws IOException when there is an issue reading the data.
      * @throws org.json.JSONException when the JSON is mis-formatted.
      */
-    public static Iterator<HapiRecord> getData( 
+    public Iterator<HapiRecord> getData( 
             URL server, 
             String id, 
             String parameters,
@@ -988,7 +989,6 @@ public class HapiClient {
             String endTime ) throws IOException, JSONException {
         return getDataCSV(server, id, parameters, startTime, endTime);
     }
-    
     
     
 }

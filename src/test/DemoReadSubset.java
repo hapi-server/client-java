@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
-import static org.hapiserver.HapiClient.*;
+import org.hapiserver.HapiClient;
 import org.hapiserver.HapiRecord;
 import org.json.JSONException;
 
@@ -18,7 +18,7 @@ public class DemoReadSubset {
     public static void main( String[] args ) throws MalformedURLException, IOException, JSONException {
         URL hapiServer=new URL("https://jfaden.net/HapiServerDemo/hapi/");
         
-        Iterator<HapiRecord> it= getData( hapiServer, "Iowa+City+Conditions", "Temperature,Humidity", "2019-10-21T00:00", "2019-10-22T00:00" );
+        Iterator<HapiRecord> it= new HapiClient().getData( hapiServer, "Iowa+City+Conditions", "Temperature,Humidity", "2019-10-21T00:00", "2019-10-22T00:00" );
         
         while ( it.hasNext() ) {
             HapiRecord rec= it.next();

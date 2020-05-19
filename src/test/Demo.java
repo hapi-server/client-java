@@ -23,7 +23,9 @@ public class Demo {
         System.err.println("");
         System.err.println("\n# The catalog can be retrieved as a string array:");
         
-        String[] ids= HapiClient.getCatalogIdsArray(hapiServer);
+        HapiClient hc= new HapiClient();
+        
+        String[] ids= hc.getCatalogIdsArray(hapiServer);
         for ( String s : ids ) {
             System.err.println(s);
         }
@@ -31,7 +33,7 @@ public class Demo {
         System.err.println("");
         System.err.println("# Raw JSON Objects can be retrieved:");
         
-        JSONObject info= HapiClient.getInfo(hapiServer,"Iowa+City+Conditions");
+        JSONObject info= hc.getInfo(hapiServer,"Iowa+City+Conditions");
         System.err.println(info.toString(4));
         
         System.err.println("");
@@ -45,7 +47,7 @@ public class Demo {
         System.err.println("");
         System.err.println("# Data is retrieved using an iterator of HapiRecords:");
         
-        Iterator<HapiRecord> it= HapiClient.getData(hapiServer,"Iowa+City+Conditions","2019-10-21T00:00","2019-10-22T00:00");        
+        Iterator<HapiRecord> it= hc.getData(hapiServer,"Iowa+City+Conditions","2019-10-21T00:00","2019-10-22T00:00");        
         while( it.hasNext() ) {
             HapiRecord rec= it.next();
             System.err.println( rec.getIsoTime(0) );
