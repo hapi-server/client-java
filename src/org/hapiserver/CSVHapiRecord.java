@@ -21,11 +21,23 @@ public class CSVHapiRecord implements HapiRecord {
     public String getIsoTime(int i) {
         return fields[i];
     }
+    
+    @Override
+    public String[] getIsoTimeArray(int i) {
+        String[] result= fields[i].split(",");
+        return result;
+    }    
 
     @Override
     public String getString(int i) {
         return fields[i];
     }
+    
+    @Override
+    public String[] getStringArray(int i) {
+        String[] result= fields[i].split(","); // note no commas are allowed in fields.
+        return result;
+    }    
 
     @Override
     public double getDouble(int i) {
@@ -47,6 +59,16 @@ public class CSVHapiRecord implements HapiRecord {
         return Integer.valueOf(fields[i]);
     }
 
+    @Override
+    public int[] getIntegerArray(int i) {
+        String[] ss= fields[i].split(",");
+        int[] result= new int[ss.length];
+        for ( int j=0; j<ss.length; j++ ) {
+            result[j]= Integer.parseInt(ss[j]);
+        }
+        return result;
+    }
+    
     @Override
     public int length() {
         return fields.length;
