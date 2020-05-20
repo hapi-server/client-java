@@ -4,8 +4,8 @@ First create an IDL object to call the static methods.  This assumes that json-2
 are in the current directory.
 
 ~~~~~
-IDL> setenv, 'CLASSPATH=json-2011-01-27-gitrelease.jar:client-java.jar'
-IDL> hc= OBJ_NEW('IDLjavaObject$Static$ClientJava', 'org.hapiserver.HapiClient')
+IDL> setenv, 'CLASSPATH=hapi-client-java.jar'
+IDL> hc= OBJ_NEW('IDLjavaObject$ClientJava', 'org.hapiserver.HapiClient')
 ~~~~~
 
 The symbol 'hc' is now used to call methods.  We will also need to get a Java URL for the server we wish to use.
@@ -49,7 +49,7 @@ IDL> while ( js.hasNext() ) do print, (js.next()).toString()
 And here's a full program:
 ~~~~~
 pro demoHapi
-   hc= OBJ_NEW('IDLjavaObject$Static$ClientJava', 'org.hapiserver.HapiClient')
+   hc= OBJ_NEW('IDLjavaObject$ClientJava', 'org.hapiserver.HapiClient')
    URL= OBJ_NEW('IDLjavaObject$URL', 'java.net.URL', 'http://jfaden.net/HapiServerDemo/hapi/' )
    js= hc.getData(URL,'poolTemperature', '2020-04-23T00:00Z', '2020-04-24T00:00Z')
    while ( js.hasNext() ) do begin
