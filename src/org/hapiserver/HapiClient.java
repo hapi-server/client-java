@@ -21,9 +21,12 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -990,5 +993,207 @@ public class HapiClient {
         return getDataCSV(server, id, parameters, startTime, endTime);
     }
     
+    private interface ParameterManager {
+        void addRecord( HapiRecord rec, ArrayList list );
+    }
     
+    /**
+     * return all the records, sorted into arrays.
+     * @param server the HAPI server
+     * @param id the dataset id
+     * @param parameters a comma-separated list of parameter names
+     * @param startTime the start time
+     * @param endTime the end time
+     * @return a map from string to array of each of the parameters.
+     * @throws IOException
+     * @throws JSONException 
+     */
+    public Map<String,Object> getAllData( URL server, 
+            String id, 
+            String parameters,
+            String startTime,
+            String endTime ) throws IOException, JSONException {
+        
+        JSONObject info= getInfo( server, id, parameters );
+
+        Map<String,Object> result= new LinkedHashMap<>();
+        
+        result.put("_nrec", 0 );
+        
+        JSONArray japarameters= info.getJSONArray("parameters");  
+
+        int nparameters= japarameters.length();
+        String[] ss= new String[nparameters];
+        ParameterManager[] fieldManagers= new ParameterManager[nparameters];
+        ArrayList[] accumulators= new ArrayList[nparameters];
+
+        for ( int i=0; i<nparameters; i++ ) {
+            JSONObject paramObject= japarameters.getJSONObject(i);
+
+            ss[i]= paramObject.getString("name");
+            accumulators[i]= new ArrayList<>();
+                    
+            result.put( ss[i], accumulators[i] );
+            
+            String type= paramObject.getString("type");
+            int[] size;
+            if ( paramObject.has("size") ) {
+                JSONArray elements= paramObject.getJSONArray("size");
+                size = new int[elements.length()];
+                for ( int j=0; j<elements.length(); j++ ) {
+                    size[j]= elements.getInt(j);
+                }
+            } else {
+                size = new int[0];
+            }
+            
+            final int fi= i; // make final so it can be used in lambda expression
+            if ( size.length>0 ) {
+                switch (type) {
+                    case "string":
+                        fieldManagers[fi]= (HapiRecord rec, ArrayList list) -> {
+                            list.add(rec.getStringArray(fi));
+                        };
+                        break;
+                    case "isotime":
+                        fieldManagers[fi]= (HapiRecord rec, ArrayList list) -> {
+                            list.add(rec.getIsoTimeArray(fi));
+                        };
+                        break;
+                    case "double":
+                        fieldManagers[fi]= (HapiRecord rec, ArrayList list) -> {
+                            list.add(rec.getDoubleArray(fi));
+                        };
+                        break;
+                    case "integer":
+                        fieldManagers[fi]= (HapiRecord rec, ArrayList list) -> {
+                            list.add(rec.getIntegerArray(fi));
+                        };
+                        break;
+                    default:
+                        throw new IllegalArgumentException("not yet supported: "+type);
+                }
+            } else {
+                switch (type) {
+                    case "string":
+                        fieldManagers[fi]= (HapiRecord rec, ArrayList list) -> {
+                            list.add(rec.getString(fi));
+                        };
+                        break;
+                    case "isotime":
+                        fieldManagers[fi]= (HapiRecord rec, ArrayList list) -> {
+                            list.add(rec.getIsoTime(fi));
+                        };
+                        break;
+                    case "double":
+                        fieldManagers[fi]= (HapiRecord rec, ArrayList list) -> {
+                            list.add(rec.getDouble(fi));
+                        };
+                        break;
+                    case "integer":
+                        fieldManagers[fi]= (HapiRecord rec, ArrayList list) -> {
+                            list.add(rec.getInteger(fi));
+                        };
+                        break;
+                    default:
+                        throw new IllegalArgumentException("not yet supported: "+type);
+                }
+            }
+        }
+        
+        int irec= 0;
+        Iterator<HapiRecord> data= getData( server, id, parameters, startTime, endTime );
+        while ( data.hasNext() ) {
+            HapiRecord rec= data.next();
+            for ( int i=0; i<nparameters; i++ ) {
+                ArrayList l = (ArrayList) accumulators[i];
+                ParameterManager fm= fieldManagers[i];
+                fm.addRecord(rec,l);
+            }
+            irec=irec+1;
+        }
+        
+        result.put( "_nrec", irec );
+        
+        Object arrayResult;
+        
+        for ( int i=0; i<nparameters; i++ ) {
+            Object o= result.get(ss[i]);
+            ArrayList l= (ArrayList)o;
+            
+            JSONObject paramObject= japarameters.getJSONObject(i);            
+            String type= paramObject.getString("type");
+            int[] size;
+            if ( paramObject.has("size") ) {
+                JSONArray elements= paramObject.getJSONArray("size");
+                size = new int[elements.length()];
+                for ( int j=0; j<elements.length(); j++ ) {
+                    size[j]= elements.getInt(j);
+                }
+            } else {
+                size = new int[0];
+            }
+            
+            if ( size.length>0 ) {
+                switch (type) {
+                    case "string":
+                        arrayResult= l.toArray( new String[l.size()][] );
+                        break;
+                    case "isotime":
+                        arrayResult= l.toArray( new String[l.size()][] );
+                        break;
+                    case "double":
+                        double[][] dd= new double[l.size()][];
+                        int is= l.size();
+                        for (int j = 0; j < is; j++) {
+                            dd[j] = (double[])l.get(j);
+                        }   
+                        arrayResult= dd;
+                        break;
+                    case "integer":
+                        int[][] ii= new int[l.size()][];
+                        is= l.size();
+                        for (int j = 0; j < is; j++) {
+                            ii[j] = (int[])l.get(j);
+                        }       
+                        arrayResult= ii;
+                        break;
+                    default:
+                        throw new IllegalArgumentException("not yet supported: "+type);
+                }
+            } else {
+                switch (type) {
+                    case "string":
+                        arrayResult= l.toArray( new String[l.size()] );
+                        break;
+                    case "isotime":
+                        arrayResult= l.toArray( new String[l.size()] );
+                        break;
+                    case "double":
+                        {
+                            double[] dd= new double[l.size()];
+                            int is= l.size();
+                            for (int j = 0; j < is; j++) {
+                                dd[j] = ((Double)l.get(j));
+                            }       arrayResult= dd;
+                            break;
+                        }
+                    case "integer":
+                        {
+                            int[] ii= new int[l.size()];
+                            int is= l.size();
+                            for (int j = 0; j < is; j++) {
+                                ii[j] = ((Integer)l.get(j));
+                            }       arrayResult= ii;
+                            break;
+                        }
+                    default:
+                        throw new IllegalArgumentException("not yet supported: "+type);
+                }                
+            }
+            result.put( ss[i], arrayResult );
+        }
+
+        return result;
+    }
 }
