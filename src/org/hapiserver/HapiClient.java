@@ -998,7 +998,27 @@ public class HapiClient {
     }
     
     /**
-     * return all the records, sorted into arrays.
+     * return all the records, sorted into arrays.  This is provided as a way to conveniently get all data in named
+     * arrays, when performance and memory are not an issue.  This uses the streaming version of the API, getData, to 
+     * read each record and combines them into arrays efficiently.  
+     * DemoAllData.java shows how this is used:
+     * <pre>
+     * {@code
+     *  URL hapiServer=new URL("https://jfaden.net/HapiServerDemo/hapi/");
+     *
+     *  HapiClient hc= new HapiClient();
+     *  Map<String,Object> data= hc.getAllData(hapiServer,"Spectrum","Spectra","2016-01-01T00:00","2016-01-01T24:00");
+     *
+     *  String[] time= (String[])data.get("Time");
+     *  double[][] spectra= (double[][])data.get("Spectra");
+     *  for ( int i=0; i<time.length; i++ ) {
+     *     double total=0;
+     *     for ( int j=0; j<spectra[i].length; j++ ) {
+     *        total+= spectra[i][j];
+     *     }
+     *     System.out.println( String.format("%s: %.2e",time[i],total) );
+     *  }
+     * }</pre>
      * @param server the HAPI server
      * @param id the dataset id
      * @param parameters a comma-separated list of parameter names
