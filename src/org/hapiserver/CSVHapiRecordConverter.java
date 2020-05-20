@@ -35,11 +35,16 @@ public class CSVHapiRecordConverter {
         }
     }
 
+    /**
+     * convert the line into a HapiRecord, breaking the string on commas.
+     * @param record the line containing the ASCII-encoded data.
+     * @return a HapiRecord containing the data.
+     */
     public HapiRecord convert( String record ) {
         String[] fields= record.trim().split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)",-2);
         String[] ff= new String[params.length()];
         int i=0;
-        for ( int j=0; i<params.length(); j++ ) {
+        for ( int j=0; j<params.length(); j++ ) {
             if ( sizes[j]==1 ) {
                 ff[j]= fields[i];
                 i=i+1;
