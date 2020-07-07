@@ -207,10 +207,22 @@ public class TimeUtil {
     }
 
     /**
+     * return the array formatted as 
+     * @param nn the decomposed time
+     * @return the formatted time.
+     * @see #isoTimeToArray(java.lang.String) 
+     */
+    public static String isoTimeFromArray( int[] nn ) {
+        return String.format( "%04d-%02d-%02dT%02d:%02d:%02d.%09dZ", 
+                nn[0], nn[1], nn[2], nn[3], nn[4], nn[5], nn[6] );
+    }
+    
+    /**
      * return array [ year, months, days, hours, minutes, seconds, nanoseconds ]
      * preserving the day of year notation if this was used.
      * @param time isoTime to decompose
      * @return the decomposed time
+     * @see #isoTimeFromArray(int[]) 
      */
     public static int[] isoTimeToArray(String time) {
         int[] result;
