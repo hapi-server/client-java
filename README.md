@@ -2,7 +2,7 @@
 Java client for accessing HAPI servers.
 
 This can be checked out and used immediately with Netbeans, or just download 
-the .jar file.  Note a jar file from json.org is needed as well.
+the .jar file.  Note a jar file from json.org is found in the lib folder.
 
 ## Building with Ant
 You can also download and build this using Ant (like make but for Java).  
@@ -21,4 +21,6 @@ It's assumed that typically ant would be used to build the library, but in cases
 unix> git clone git@github.com:hapi-server/client-java.git
 unix> cd client-java/src
 unix> javac -cp ../lib/json-2011-01-27-gitrelease.jar org/hapiserver/*.java com/cottagesystems/util/*.java
-unix> jar cvf client-java.jar org/hapiserver/*.class com/cottagesystems/util/*.class
+unix> jar cvf dist/client-java.jar org/hapiserver/*.class com/cottagesystems/util/*.class
+~~~~~
+This will create dist/client-java.jar.
