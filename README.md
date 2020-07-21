@@ -5,7 +5,7 @@ This can be checked out and used immediately with Netbeans, or just download
 the .jar file.  Note a jar file from json.org is found in the lib folder.
 
 ## Building with Ant
-You can also download and build this using Ant (like make but for Java).  
+You can also download and build this using Ant (like Make but for Java).  
 
 ~~~~~
 unix> git clone git@github.com:hapi-server/client-java.git
