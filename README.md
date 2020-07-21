@@ -20,11 +20,11 @@ It's assumed that typically ant would be used to build the library, but in cases
 ~~~~~
 unix> git clone git@github.com:hapi-server/client-java.git
 unix> cd client-java
-unix> mkdir build
+unix> mkdir build  # compiled classes will go here
+unix> mkdir dist   # jar file will go here
 unix> javac -cp lib/json-2011-01-27-gitrelease.jar -sourcepath src/ -d build `find src -name *.java`
 unix> cd build
 unix> jar xvf ../lib/json-2011-01-27-gitrelease.jar
-unix> mkdir dist
 unix> jar cvf ../dist/client-java.jar `find . -name '*.class'`
 ~~~~~
 This will create dist/client-java.jar.
