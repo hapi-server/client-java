@@ -4,7 +4,7 @@ First create an IDL object to call the static methods.  This assumes that json-2
 are in the current directory.
 
 ~~~~~
-IDL> setenv, 'CLASSPATH=hapi-client-java.jar'
+IDL> setenv, 'CLASSPATH=client-java.jar'
 IDL> hc= OBJ_NEW('IDLjavaObject$ClientJava', 'org.hapiserver.HapiClient')
 ~~~~~
 
