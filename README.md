@@ -2,7 +2,7 @@
 Java client for accessing HAPI servers.
 
 This can be checked out and used immediately with Netbeans, or just download 
-the .jar file.  Note a jar file from json.org is found in the lib folder.
+the .jar file in the "store" folder.  Note a jar file from json.org is found in the lib folder.
 
 ## Building with Ant
 You can also download and build this using Ant (like Make but for Java).  
