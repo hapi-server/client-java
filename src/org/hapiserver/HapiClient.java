@@ -989,6 +989,8 @@ public class HapiClient {
                 logger.fine("cache contains no data");
                 return Collections.emptyIterator();
             }
+            
+            logger.log(Level.FINE, "opening {0}", dataURL);
             InputStream ins= dataURL.openStream();
 
             result= new HapiClientBinaryIterator( info, ins );
