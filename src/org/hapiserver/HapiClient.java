@@ -886,7 +886,7 @@ public class HapiClient {
 
             InputStream ins= dataURL.openStream();
             BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
-            result= new HapiClientIterator( info, reader );
+            result= new HapiClientCSVIterator( info, reader );
             
             if ( useCache() ) {
                 File cache= Paths.get( getHapiCache(), 
@@ -937,7 +937,7 @@ public class HapiClient {
             }
             InputStream ins= dataURL.openStream();
             BufferedReader reader= new BufferedReader( new InputStreamReader(ins) );
-            result= new HapiClientIterator( info, reader );
+            result= new HapiClientCSVIterator( info, reader );
             
             if ( useCache() ) {
                 File cache= Paths.get( getHapiCache(), 
@@ -952,6 +952,61 @@ public class HapiClient {
         }
         
     }
+    
+    /**
+     * return the data record-by-record, using the CSV response.
+     * @param server the server URL, ending with "hapi".
+     * @param id the dataset id to read.
+     * @param parameters the parameters, comma separated to read.
+     * @param startTime the start time, in isoTime.
+     * @param endTime the end time, in isoTime.
+     * @return Iterator, which will return records until the stream is empty.
+     * @throws IOException when there is an issue reading the data.
+     * @throws org.json.JSONException should the server return an invalid response.
+     */
+    public Iterator<HapiRecord> getDataBinary( 
+            URL server, 
+            String id, 
+            String parameters,
+            String startTime,
+            String endTime ) throws IOException, JSONException {
+        
+        JSONObject info= getInfo( server, id, parameters );
+
+        URL dataURL= url( server, 
+                "data?id="+id 
+                + "&format=binary"
+                + "&parameters="+parameters 
+                + "&time.min="+startTime 
+                + "&time.max="+endTime );
+                
+        //Iterator<HapiRecord> result= checkCache( info, dataURL, id, startTime, endTime );
+        Iterator<HapiRecord> result= null;
+        if ( result!=null ) {
+            return result;
+        } else {
+            if ( isOffline() ) {
+                logger.fine("cache contains no data");
+                return Collections.emptyIterator();
+            }
+            InputStream ins= dataURL.openStream();
+
+            result= new HapiClientBinaryIterator( info, ins );
+            
+//            if ( false && useCache() ) {
+//                File cache= Paths.get( getHapiCache(), 
+//                        dataURL.getProtocol(), 
+//                        dataURL.getHost(), 
+//                        dataURL.getPath(), 
+//                        id ).toFile();
+//                result= new WriteCacheIterator( info, result, startTime, endTime, cache, true );
+//            }
+            
+            return result;
+        }
+        
+    }
+    
         
     /**
      * return the data record-by-record
