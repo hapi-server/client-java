@@ -226,6 +226,7 @@ public class TimeUtil {
      */
     public static int[] isoTimeToArray(String time) {
         int[] result;
+        time= time.trim();
         if (time.length() == 4) {
             result = new int[]{Integer.parseInt(time), 1, 1, 0, 0, 0, 0};
         } else {
