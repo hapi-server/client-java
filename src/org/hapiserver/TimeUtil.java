@@ -92,7 +92,7 @@ public class TimeUtil {
      * stopTime.
      * @param startTime an iso time string
      * @param stopTime an iso time string
-     * @return array of times, complete days, in the form $Y-$m-$d
+     * @return array of times, complete days, in the form $Y-$m-$dZ
      */
     public static String[] countOffDays(String startTime, String stopTime) {
         if (stopTime.length() < 10 || Character.isDigit(stopTime.charAt(10))) {
@@ -130,9 +130,9 @@ public class TimeUtil {
     }
 
     /**
-     * return the previous day boundary.  Note hours, minutes, seconds and nanoseconds are ignored.
+     * return the previous day boundary, ignoring hours, minutes, seconds and nanoseconds.
      * @param day any isoTime format string.
-     * @return the next day in $Y-$m-$dZ
+     * @return the previous day in $Y-$m-$dZ
      * @see #floor(java.lang.String) 
      * @see #nextDay(java.lang.String) 
      */
@@ -159,7 +159,7 @@ public class TimeUtil {
     }
 
     /**
-     * return the $Y-$m-$dT00:00:00.000000000Z of the next boundary, or
+     * return the $Y-$m-$dT00:00:00.000000000Z of the previous boundary, or
      * the same value (normalized) if we are already at a boundary.
      * @param time any isoTime format string.
      * @return the previous midnight or the value if already at midnight.
@@ -207,7 +207,7 @@ public class TimeUtil {
     }
 
     /**
-     * return the array formatted as 
+     * return the array formatted as $Y-$m-$dT$H:$M:$S.$(subsec,places=9)Z.
      * @param nn the decomposed time
      * @return the formatted time.
      * @see #isoTimeToArray(java.lang.String) 
@@ -233,13 +233,24 @@ public class TimeUtil {
             if (time.length() < 8) {
                 throw new IllegalArgumentException("time must have 4 or greater than 7 elements");
             }
-            if (time.charAt(8) == 'T') {
+            if ( time.length()==8 ) { // YYYY-ddd
                 result = new int[]{parseInt(time.substring(0, 4)), 1, parseInt(time.substring(5, 8)), // days
                 0, 0, 0, 0};
-                time = time.substring(9);
+                time = time.substring(8);
             } else {
-                result = new int[]{parseInt(time.substring(0, 4)), parseInt(time.substring(5, 7)), parseInt(time.substring(8, 10)), 0, 0, 0, 0};
-                time = time.substring(11);
+                char ch8= time.charAt(8);
+                if ( ch8 == 'T' || ch8=='Z' ) { // YYYY-dddZ
+                    result = new int[]{parseInt(time.substring(0, 4)), 1, parseInt(time.substring(5, 8)), // days
+                    0, 0, 0, 0};
+                    time = time.substring(9);
+                } else { // YYYY-mm-ddT
+                    result = new int[]{parseInt(time.substring(0, 4)), parseInt(time.substring(5, 7)), parseInt(time.substring(8, 10)), 0, 0, 0, 0};
+                    if ( time.length()==10 ) {
+                        time= ""; // Z is missing, which is okay.
+                    } else {
+                        time = time.substring(11);
+                    }
+                }
             }
             if (time.endsWith("Z")) {
                 time = time.substring(0, time.length() - 1);
