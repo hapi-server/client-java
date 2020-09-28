@@ -73,16 +73,21 @@ public class DemoBinaryRead {
                 "2008-03-31T02:00:00Z",
                 "2008-03-31T04:00:00Z" );
         
+        int irec=0;
         while ( it.hasNext() ) {
             HapiRecord rec= it.next();
-
-            String s= TimeUtil.reformatIsoTime( "2000-01-01T00:00:00.000Z", rec.getIsoTime(0) );
-            double[] t= rec.getDoubleArray(1);
-            System.out.print( String.format( "%s ", s ) );
-            for ( int i=0; i<t.length; i++ ) {
-                System.out.print( String.format( "%.2e ", t[i] ) );
+            irec++;
+            try {
+                String s= TimeUtil.reformatIsoTime( "2000-01-01T00:00:00.000Z", rec.getIsoTime(0) );
+                double[] t= rec.getDoubleArray(1);
+                System.out.print( String.format( "%s ", s ) );
+                for ( int i=0; i<t.length; i++ ) {
+                    System.out.print( String.format( "%.2e ", t[i] ) );
+                }
+                System.out.println("");
+            } catch ( RuntimeException ex ) {
+                ex.printStackTrace();
             }
-            System.out.println("");
         }
     }    
 }

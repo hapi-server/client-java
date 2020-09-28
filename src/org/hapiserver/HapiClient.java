@@ -995,14 +995,14 @@ public class HapiClient {
 
             result= new HapiClientBinaryIterator( info, ins );
             
-//            if ( false && useCache() ) {
-//                File cache= Paths.get( getHapiCache(), 
-//                        dataURL.getProtocol(), 
-//                        dataURL.getHost(), 
-//                        dataURL.getPath(), 
-//                        id ).toFile();
-//                result= new WriteCacheIterator( info, result, startTime, endTime, cache, true );
-//            }
+            if ( useCache() ) {
+                File cache= Paths.get( getHapiCache(), 
+                        dataURL.getProtocol(), 
+                        dataURL.getHost(), 
+                        dataURL.getPath(), 
+                        id ).toFile();
+                result= new WriteCacheIterator( info, result, startTime, endTime, cache, true );
+            }
             
             return result;
         }

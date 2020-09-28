@@ -87,9 +87,22 @@ public class BinaryHapiRecord implements HapiRecord {
 
     @Override
     public String getAsString(int i) {
-        throw new UnsupportedOperationException("this should not be used with Binary");
+        throw new UnsupportedOperationException("this should only be used with CSV");
     }
 
+    /**
+     * get the value as a byte buffer.
+     * @param i the index of the column
+     * @return the string value.
+     */
+    public ByteBuffer getAsByteBuffer(int i) {
+        int offs= this.offsets[i];
+        int lens= this.lengths[i];
+        bbuf.position(offs);
+        bbuf.limit(offs+lens);
+        return bbuf.slice();        
+    }
+    
     @Override
     public int length() {
         return offsets.length;
