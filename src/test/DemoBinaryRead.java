@@ -87,6 +87,12 @@ public class DemoBinaryRead {
         }
     }
     
+    /**
+     * TODO: this shows a strange problem where data is mishandled. 
+     * @throws IOException
+     * @throws MalformedURLException
+     * @throws JSONException 
+     */
     private static void testArray() throws IOException, MalformedURLException, JSONException {
         //GET https://cdaweb.gsfc.nasa.gov/hapi/data?id=PO_H0_HYD&time.min=2008-03-31T02:00:00Z&time.max=2008-03-31T04:00:00Z&parameters=Time,ELECTRON_DIFFERENTIAL_ENERGY_FLUX&format=binary
         URL hapiServer=new URL("https://cdaweb.gsfc.nasa.gov/hapi");
