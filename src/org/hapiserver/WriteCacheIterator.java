@@ -49,23 +49,31 @@ public class WriteCacheIterator implements Iterator<HapiRecord> {
     /**
      * either "csv" or "binary"
      */
-    private String ext;
-    
-    private PrintWriter fout;
-    private OutputStream bout;
+    private final String ext;
     
     /**
-     * either fouts or bouts is non-null, depending on csv or binary.
+     * either fout or bout is non-null, depending on csv or binary, when writing
+     * all parameters to one file.
+     */
+    private PrintWriter fout;
+    
+    /**
+     * either fouts or bouts is non-null, depending on csv or binary, when
+     * writing parameters to separate files.
      */
     private PrintWriter[] fouts;
+
+    private FileOutputStream bout;
     
     /**
      * the output stream we close.
      */
     private FileOutputStream[] bouts;
+
+    private WritableByteChannel cout;
     
     /**
-     * the channel we write to.
+     * the channel we write to, used with bouts.
      */
     private WritableByteChannel[] couts; 
     
@@ -194,13 +202,8 @@ public class WriteCacheIterator implements Iterator<HapiRecord> {
                             couts[i].write( brecord.getAsByteBuffer(i) );
                         }
                     } else {
-                        ByteBuffer out1= ByteBuffer.allocate( brecord.length() );
-                        out1.put( brecord.getAsByteBuffer(0) );
-                        for ( int i=1; i<names.length; i++ ) {
-                            out1.put( brecord.getAsByteBuffer(i) );
-                        }
-                        out1.flip();
-                        bout.write( out1.array() );
+                        ByteBuffer out1= brecord.getAsByteBuffer();
+                        cout.write( out1);
                     }
                 } catch ( IOException ex ) {
                     logger.warning(ex.getMessage());
@@ -317,6 +320,7 @@ public class WriteCacheIterator implements Iterator<HapiRecord> {
                             }
                         }
                         bout= new FileOutputStream( channel + ".writing."+pid );
+                        cout= bout.getChannel();
                     } catch (FileNotFoundException ex) {
                         logger.log(Level.SEVERE, null, ex);
                     }

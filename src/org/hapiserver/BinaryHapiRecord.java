@@ -103,6 +103,10 @@ public class BinaryHapiRecord implements HapiRecord {
         return bbuf.slice();        
     }
     
+    public ByteBuffer getAsByteBuffer() {
+        return bbuf.asReadOnlyBuffer();
+    }
+    
     @Override
     public int length() {
         return offsets.length;
