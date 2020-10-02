@@ -54,6 +54,9 @@ public class HapiClient {
     
     private static final Lock LOCK= new ReentrantLock();
 
+    /**
+     * create a new HAPI client, which will interact with HAPI servers.
+     */
     public HapiClient() {
         
     }
@@ -1134,8 +1137,8 @@ public class HapiClient {
      * @param startTime the start time
      * @param endTime the end time
      * @return a map from string to array of each of the parameters.
-     * @throws IOException
-     * @throws JSONException 
+     * @throws IOException when there is an issue reading the data.
+     * @throws JSONException when the JSON is mis-formatted.
      */
     public Map<String,Object> getAllData( URL server, 
             String id, 

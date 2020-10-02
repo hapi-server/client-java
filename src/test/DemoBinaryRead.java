@@ -1,26 +1,33 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package test;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.hapiserver.HapiClient;
 import org.hapiserver.HapiRecord;
 import org.hapiserver.TimeUtil;
 import org.json.JSONException;
 
 /**
- *
+ * Codes used to test and demonstrate binary reads.
  * @author jbf
  */
 public class DemoBinaryRead {
     public static void main( String[] args ) throws MalformedURLException, IOException, JSONException {
+        {
+            Logger.getLogger( "org.hapiserver" ).setLevel( Level.ALL );
+            ConsoleHandler h= new ConsoleHandler();
+            h.setLevel(Level.ALL);
+            Logger.getLogger( "org.hapiserver" ).addHandler( h );
+        }
+        
         testArray();
+        testAll();
         testMultiple();
         testTemp();
     }
@@ -39,9 +46,26 @@ public class DemoBinaryRead {
 
             String s= TimeUtil.reformatIsoTime( "2000-01-01T00:00:00.000Z", rec.getIsoTime(0) );
             double t= rec.getDouble(1);
-            System.out.println( String.format( "%s %10.3e", s, t ) );
+            //System.out.println( String.format( "%s %10.3e", s, t ) );
         }
     }
+
+    private static void testAll() throws IOException, MalformedURLException, JSONException {
+        URL hapiServer=new URL("https://jfaden.net/HapiServerDemo/hapi");
+        
+        Iterator<HapiRecord> it= new HapiClient().getDataBinary( hapiServer,
+                "atticTemperature",
+                "2020-08-25T00Z",
+                "2020-09-17T08Z" );
+        
+        while ( it.hasNext() ) {
+            HapiRecord rec= it.next();
+            String s= TimeUtil.reformatIsoTime( "2000-01-01T00:00:00.000Z", rec.getIsoTime(0) );
+            double t= rec.getDouble(1);
+            //System.out.println( String.format( "%s %10.3e", s, t ) );
+        }
+    }
+    
     
     private static void testMultiple() throws IOException, MalformedURLException, JSONException {
         URL hapiServer=new URL("http://jfaden.net/HapiServerDemo/hapi");
