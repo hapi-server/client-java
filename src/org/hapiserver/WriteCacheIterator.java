@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,7 +58,16 @@ public class WriteCacheIterator implements Iterator<HapiRecord> {
      * either fouts or bouts is non-null, depending on csv or binary.
      */
     private PrintWriter[] fouts;
-    private OutputStream[] bouts;
+    
+    /**
+     * the output stream we close.
+     */
+    private FileOutputStream[] bouts;
+    
+    /**
+     * the channel we write to.
+     */
+    private WritableByteChannel[] couts; 
     
     private final boolean separateChannels;
     
@@ -180,7 +191,7 @@ public class WriteCacheIterator implements Iterator<HapiRecord> {
                 try {
                     if ( separateChannels ) {
                         for ( int i=0; i<names.length; i++ ) {
-                            bouts[i].write( brecord.getAsByteBuffer(i).array() );
+                            couts[i].write( brecord.getAsByteBuffer(i) );
                         }
                     } else {
                         ByteBuffer out1= ByteBuffer.allocate( brecord.length() );
@@ -281,7 +292,8 @@ public class WriteCacheIterator implements Iterator<HapiRecord> {
             case "binary":
                 if ( separateChannels ) {
                     channels= new File[names.length];
-                    bouts= new OutputStream[names.length];
+                    bouts= new FileOutputStream[names.length];
+                    couts= new WritableByteChannel[names.length];
                     for ( int i=0; i<names.length; i++ ) {
                         channels[i]= getCacheFile(cacheRoot, currentTag, names[i], ext );
                         try {
@@ -291,6 +303,7 @@ public class WriteCacheIterator implements Iterator<HapiRecord> {
                                 }
                             }
                             bouts[i]= new FileOutputStream(channels[i] + ".writing."+pid  );
+                            couts[i]= bouts[i].getChannel();
                         } catch (FileNotFoundException ex) {
                             logger.log(Level.SEVERE, null, ex);
                         }
@@ -319,6 +332,7 @@ public class WriteCacheIterator implements Iterator<HapiRecord> {
         if ( !ch.exists() ) {
             throw new IllegalArgumentException("incorrect name, should have found "+ch);
         } 
+        logger.log(Level.FINE, "move stage file into cache: {0}", name);
         if ( !ch.renameTo( new File(name) ) ) {
             if ( !ch.delete() ) {
                 logger.info("temporary file left in cache");
