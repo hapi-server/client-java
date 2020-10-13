@@ -469,6 +469,17 @@ public class HapiClient {
     }
     
     /**
+     * provide an easy way to create a URL from a string.  In IDL, it
+     * requires some ugly code to create URLs.
+     * @param surl a string representation of a URL.
+     * @return the string as a URL.
+     * @throws MalformedURLException 
+     */
+    public static URL url( String surl ) throws MalformedURLException {
+        return new URL(surl);
+    }
+    
+    /**
      * return the catalog as a JSONObject.  For example:
      * <pre>
      * {@code
