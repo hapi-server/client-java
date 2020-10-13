@@ -53,8 +53,19 @@ public class DemoAllData {
         }
 
     }
+    
+    public static void test0() throws MalformedURLException, IOException, JSONException {
+        URL hapiServer=new URL("https://cdaweb.gsfc.nasa.gov/hapi");
+        HapiClient hc= new HapiClient();
+        Map<String,Object> data= hc.getAllData(hapiServer,"PO_K0_EFI","POTENT",
+            "2000-01-06T00:00","2000-01-10T00:00");
+        double[] dd= (double[])data.get("POTENT");
+        System.err.println( "first: " +dd[0] );
+        System.err.println( "last : " +dd[dd.length-1] );
+    }
 
     public static void main( String[] args ) throws IOException, MalformedURLException, JSONException {
-        test1( args );
+        test0();
+        //test1( args );
     }
 }
