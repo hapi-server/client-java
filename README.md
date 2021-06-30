@@ -31,3 +31,7 @@ jar xvf ../lib/json-2011-01-27-gitrelease.jar
 jar cvf ../dist/client-java.jar `find . -name '*.class'`
 ~~~~~
 This will create dist/client-java.jar.
+
+## Example Use
+Java examples can be found in https://github.com/hapi-server/client-java/tree/master/src/test.
+
