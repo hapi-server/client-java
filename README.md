@@ -35,3 +35,7 @@ This will create dist/client-java.jar.
 ## Example Use
 Java examples can be found in https://github.com/hapi-server/client-java/tree/master/src/test.
 
+This Java library can be used in IDL, described in this document: https://github.com/hapi-server/client-java/blob/master/workingWithIDL.md.
+
+Similarly, it can be used in Matlab, as described in this document: https://github.com/hapi-server/client-java/blob/master/workingWithMatlab.md.
+
