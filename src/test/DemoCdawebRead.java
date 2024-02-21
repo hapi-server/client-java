@@ -21,7 +21,7 @@ public class DemoCdawebRead {
         
         Iterator<HapiRecord> it= new HapiClient().getData( hapiServer,
                 "MMS4_EPD-EIS_SRVY_L2_ELECTRONENERGY",
-                "mms4_epd_eis_electronenergy_electron_P4_flux_t5",
+                "mms4_epd_eis_srvy_l2_electronenergy_electron_P5_flux_t5",
                 "2020-02-03T00Z",
                 "2020-02-03T08Z" );
         
