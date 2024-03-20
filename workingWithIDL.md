@@ -11,7 +11,7 @@ IDL> hc= OBJ_NEW('IDLjavaObject$ClientJava', 'org.hapiserver.HapiClient')
 The symbol 'hc' is now used to call methods.  We will also need to get a Java URL for the server we wish to use.
 
 ~~~~~
-URL= OBJ_NEW('IDLjavaObject$URL', 'java.net.URL', 'http://jfaden.net/HapiServerDemo/hapi/' )
+URL= OBJ_NEW('IDLjavaObject$URL', 'java.net.URL', 'https://jfaden.net/HapiServerDemo/hapi/' )
 js= hc.getCatalogIdsArray(URL)
 ~~~~~
 
@@ -50,7 +50,7 @@ And here's a full program:
 ~~~~~
 pro demoHapi
    hc= OBJ_NEW('IDLjavaObject$ClientJava', 'org.hapiserver.HapiClient')
-   URL= OBJ_NEW('IDLjavaObject$URL', 'java.net.URL', 'http://jfaden.net/HapiServerDemo/hapi/' )
+   URL= OBJ_NEW('IDLjavaObject$URL', 'java.net.URL', 'https://jfaden.net/HapiServerDemo/hapi/' )
    js= hc.getData(URL,'poolTemperature', '2020-04-23T00:00Z', '2020-04-24T00:00Z')
    while ( js.hasNext() ) do begin
       rec= js.next()
