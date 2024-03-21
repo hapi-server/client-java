@@ -62,15 +62,18 @@ public class DemoCaching {
         }
         
         System.out.println("# Demo that we can read data from cache, even though we are offline.");
-        new HapiClient().setOffline(true);
+        hapiClient.setOffline(true);
         
         it= hapiClient.getData(hapiServer,
             "Iowa+City+Conditions",
             "Temperature,Humidity",
-            "2019-10-20T23:30","2019-10-21T00:30" );
+            "2019-10-20T12:30","2019-10-21T00:30" );
         
         while ( it.hasNext() ) {
             HapiRecord rec= it.next();
+            if ( rec.getIsoTime(0).compareTo("2019-10-20T12:30")<0 ) {
+                throw new IllegalArgumentException("first timetag returned is too early");
+            }
             System.out.println( String.format( "%s %9.3f %9.3f", rec.getIsoTime(0), rec.getDouble(1), rec.getDouble(2) ) );
         }
         
@@ -81,7 +84,7 @@ public class DemoCaching {
         it= hapiClient.getData(hapiServer,
             "Iowa+City+Conditions",
             "Temperature,Humidity",
-            "2019-10-20T23:30","2019-10-21T00:30" );
+            "2019-10-20T12:30","2019-10-21T00:30" );
         
         if ( !it.hasNext() ) {
             System.out.println("(reads no records)");
