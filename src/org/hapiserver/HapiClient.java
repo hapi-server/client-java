@@ -862,6 +862,9 @@ public class HapiClient {
         }
         
         result= calculateCsvCacheReader( info, files );
+        if ( result!=null ) {
+            result= new TrimHapiRecordIterator(result,startTime,endTime);
+        }
         return result;
         
     }
